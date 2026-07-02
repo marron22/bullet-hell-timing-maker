@@ -24,6 +24,7 @@
 5. **書き出す** … 右下パネルの 2 ボタンを使い分けます:
    - **作業内容を保存** … 編集を再開するための JSON（画像込み）をダウンロード
    - **AI用指示を保存** … プレビュー中の Markdown 指示書をダウンロード
+   - **チャート雛形を保存** … マーカーを named markers（`M1: "5:1"` 等の bar:beat）に落とした `{曲名}.chart.json` をダウンロード。Unity メニュー `Tools/Bullet Hell/Compile Stage Charts` でステージ JSON にコンパイルする（events は空配列なので、コンパイル前に発射イベントを追記する）
    保存した JSON はヘッダーの「作業内容を読込」から復元できます。
 6. **リポジトリへ保存** … 書き出した Markdown を `Instructions/{曲名}-timing-instructions.md`
    として保存し、Claude に渡します（画像はチャットに別途添付）。

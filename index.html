@@ -1006,6 +1006,7 @@
             <div class="export-actions">
               <button id="saveWork" class="primary" type="button" data-icon="download">作業内容を保存</button>
               <button id="saveInstructions" type="button" data-icon="file-text">AI用指示を保存</button>
+              <button id="saveChart" type="button" data-icon="file-text">チャート雛形を保存</button>
             </div>
             <span id="markerCount">0 keys</span>
           </div>
@@ -1084,6 +1085,7 @@
       jumpForward: document.getElementById("jumpForward"),
       saveWork: document.getElementById("saveWork"),
       saveInstructions: document.getElementById("saveInstructions"),
+      saveChart: document.getElementById("saveChart"),
       importJson: document.getElementById("importJson"),
       jsonInput: document.getElementById("jsonInput"),
     };
@@ -1942,6 +1944,48 @@
       return lines.join("\n");
     }
 
+    // StageChart 雛形(<slug>.chart.json)。マーカーを bar:beat の named markers に落とし、
+    // meta を埋め、events は空配列。Unity 側 Tools/Bullet Hell/Compile Stage Charts でコンパイルする。
+    function buildChartTemplate() {
+      const bpm = Number(ui.bpm.value) || 144;
+      const measure = measureCount();
+      const beatDur = beatDuration();
+      const list = sortedMarkers();
+      const markers = {
+        _comment: "各マーカーの bar:beat(1始まり)。ここを書き換えて再コンパイルするとリタイムできる。",
+      };
+      const labels = {};
+      list.forEach((marker, index) => {
+        const name = `M${index + 1}`;
+        const beatsFromStart = (marker.time - beatOffsetSec()) / beatDur;
+        const q = Math.round(beatsFromStart * 4) / 4; // nearest 16th (quarter beat)
+        const bar = Math.floor(q / measure) + 1;
+        const beatInBar = q - (bar - 1) * measure + 1;
+        const beatStr = Number.isInteger(beatInBar) ? String(beatInBar) : String(beatInBar);
+        markers[name] = `${bar}:${beatStr}`;
+        const label = (marker.label || "").trim() || (marker.comment || "").trim().split(/\r?\n/)[0];
+        if (label) labels[name] = label;
+      });
+      const chart = {
+        _comment: "StageChart 雛形。events は空。時刻は bar:beat / 秒 / \"M12 + 2beat\" 等の式で書ける。"
+          + " イベント例: { \"at\": \"M1\", \"clip\": \"バッファ名\" }、Clear は { \"at\": \"M31\", \"kind\": \"clear\" }。"
+          + " コンパイル: Unity メニュー Tools/Bullet Hell/Compile Stage Charts。",
+        meta: {
+          stageName: trackName() || fileSlug(),
+          bpm,
+          measure,
+          beatOffsetSec: beatOffsetSec(),
+          delayTime: 0,
+          stageDescription: composerName(),
+        },
+        markers,
+        _markerLabels: labels,
+        events: [],
+        enemies: [],
+      };
+      return JSON.stringify(chart, null, 2);
+    }
+
     // テキストエリアのプレビューは AI用指示(Markdown)固定。
     function updateExport() {
       if (exportDirty && document.activeElement === ui.exportText) return;
@@ -2204,6 +2248,12 @@
       const markdown = exportDirty ? ui.exportText.value : buildMarkdown();
       download(`${fileSlug()}-timing-instructions.md`, markdown, "text/markdown");
       ui.status.textContent = "AI用指示(Markdown)を保存しました";
+    });
+
+    // チャート雛形を保存: マーカーを named markers にした <slug>.chart.json をダウンロード。
+    ui.saveChart.addEventListener("click", () => {
+      download(`${fileSlug()}.chart.json`, buildChartTemplate(), "application/json");
+      ui.status.textContent = "StageChart 雛形(chart.json)を保存しました";
     });
 
     // 追従トグル: ON で再生ヘッドにエッジ追従、OFF で自由スクロール。
