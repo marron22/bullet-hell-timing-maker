@@ -1,0 +1,2596 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="data:,">
+  <title>タイミングエディタ</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --canvas: #11100e;
+      --surface: #181715;
+      --surface-card: #252320;
+      --surface-strong: #302e2a;
+      --surface-dark: #0d0c0b;
+      --surface-dark-elevated: #1d1b18;
+      --surface-dark-soft: #151411;
+      --ink: #faf9f5;
+      --body: #e6dfd8;
+      --muted: #a09d96;
+      --muted-soft: #79756e;
+      --hairline: rgba(250, 249, 245, 0.13);
+      --hairline-soft: rgba(250, 249, 245, 0.08);
+      --primary: #cc785c;
+      --primary-active: #d98b70;
+      --on-primary: #ffffff;
+      --on-dark: #faf9f5;
+      --on-dark-soft: #a09d96;
+      --accent-teal: #5db8a6;
+      --accent-amber: #e8a55a;
+      --success: #5db872;
+      --warning: #d4a017;
+      --error: #c64545;
+      --radius-xs: 4px;
+      --radius-sm: 6px;
+      --radius-md: 8px;
+      --radius-lg: 12px;
+      --radius-xl: 16px;
+      --shadow-soft: 0 18px 44px rgba(0, 0, 0, 0.22);
+      font-family: Inter, "Yu Gothic UI", "Hiragino Sans", "Noto Sans JP", system-ui, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      overflow: hidden;
+      background: var(--surface-card);
+      color: var(--ink);
+    }
+
+    button,
+    input,
+    select,
+    textarea {
+      font: inherit;
+    }
+
+    button,
+    select,
+    input,
+    textarea {
+      outline: none;
+    }
+
+    button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      min-height: 36px;
+      border: 1px solid var(--hairline);
+      border-radius: var(--radius-md);
+      padding: 0 14px;
+      background: var(--surface-card);
+      color: var(--ink);
+      font-size: 13px;
+      font-weight: 600;
+      line-height: 1;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 140ms ease, border-color 140ms ease, color 140ms ease, transform 140ms ease;
+    }
+
+    button:hover {
+      border-color: rgba(250, 249, 245, 0.22);
+      background: var(--surface-strong);
+    }
+
+    button:active {
+      transform: translateY(1px);
+    }
+
+    button.primary {
+      border-color: var(--primary);
+      background: var(--primary);
+      color: var(--on-primary);
+    }
+
+    button.primary:hover {
+      border-color: var(--primary-active);
+      background: var(--primary-active);
+    }
+
+    button.dark {
+      border-color: var(--surface-dark-elevated);
+      background: var(--surface-dark-elevated);
+      color: var(--on-dark);
+    }
+
+    button.ghost {
+      background: transparent;
+    }
+
+    button.danger {
+      border-color: rgba(198, 69, 69, 0.26);
+      background: rgba(198, 69, 69, 0.16);
+      color: #ffb2a8;
+    }
+
+    button.icon {
+      width: 36px;
+      min-width: 36px;
+      padding: 0;
+      border-radius: 999px;
+      font-size: 14px;
+    }
+
+    .icon-svg {
+      width: 16px;
+      height: 16px;
+      flex: 0 0 auto;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      fill: none;
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      border: 1px solid var(--hairline);
+      border-radius: var(--radius-md);
+      background: var(--surface-dark-elevated);
+      color: var(--ink);
+      font-size: 13px;
+    }
+
+    input,
+    select {
+      min-height: 36px;
+      padding: 0 10px;
+    }
+
+    textarea {
+      min-height: 104px;
+      resize: vertical;
+      padding: 10px 12px;
+      line-height: 1.55;
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(204, 120, 92, 0.16);
+    }
+
+    .app {
+      display: grid;
+      grid-template-rows: 68px minmax(0, 1fr) 78px;
+      height: 100vh;
+      min-width: 860px;
+    }
+
+    .topbar {
+      display: grid;
+      grid-template-columns: minmax(236px, 0.72fr) minmax(280px, 1fr) auto;
+      align-items: center;
+      gap: 18px;
+      padding: 0 24px;
+      border-bottom: 1px solid var(--hairline);
+      background: rgba(17, 16, 14, 0.96);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .brand-mark {
+      position: relative;
+      width: 28px;
+      height: 28px;
+      flex: 0 0 auto;
+    }
+
+    .brand-mark::before,
+    .brand-mark::after,
+    .brand-mark span::before,
+    .brand-mark span::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 4px;
+      height: 28px;
+      border-radius: 999px;
+      background: var(--ink);
+      transform: translate(-50%, -50%);
+    }
+
+    .brand-mark::after {
+      transform: translate(-50%, -50%) rotate(90deg);
+    }
+
+    .brand-mark span::before {
+      transform: translate(-50%, -50%) rotate(45deg);
+    }
+
+    .brand-mark span::after {
+      transform: translate(-50%, -50%) rotate(-45deg);
+    }
+
+    .brand-copy {
+      min-width: 0;
+    }
+
+    h1 {
+      margin: 0;
+      font-family: "Times New Roman", "Yu Mincho", serif;
+      font-size: 25px;
+      font-weight: 400;
+      line-height: 1.05;
+      letter-spacing: 0;
+      white-space: nowrap;
+    }
+
+    .brand-sub {
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 600;
+      line-height: 1;
+    }
+
+    .file-row,
+    .top-actions,
+    .transport,
+    .button-row,
+    .micro-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .file-row {
+      justify-content: center;
+    }
+
+    .top-actions {
+      justify-content: flex-end;
+    }
+
+    .file-name {
+      min-width: 120px;
+      overflow: hidden;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 500;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .hidden-input {
+      display: none;
+    }
+
+    .main {
+      display: grid;
+      grid-template-columns: minmax(600px, 1fr) minmax(360px, 420px);
+      min-height: 0;
+    }
+
+    .timeline-shell {
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr) 172px;
+      min-width: 0;
+      border-right: 1px solid var(--hairline);
+      background: var(--canvas);
+    }
+
+    .timeline-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: end;
+      min-height: 76px;
+      padding: 12px 20px;
+      border-bottom: 1px solid var(--hairline);
+      background: var(--surface);
+    }
+
+    .timeline-toolbar > label {
+      flex: 1 1 92px;
+      min-width: 84px;
+      max-width: 150px;
+    }
+
+    .timeline-toolbar > label.wide {
+      flex: 1 1 132px;
+      max-width: 200px;
+    }
+
+    label,
+    .field-label {
+      display: grid;
+      gap: 5px;
+      color: var(--body);
+      font-size: 11px;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+
+    .toolbar-note {
+      flex: 1 1 240px;
+      align-self: center;
+      margin-left: auto;
+      max-width: 320px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.5;
+      text-align: right;
+    }
+
+    .kbd {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 20px;
+      min-height: 20px;
+      margin: 0 1px;
+      border: 1px solid var(--hairline);
+      border-radius: var(--radius-xs);
+      background: var(--canvas);
+      color: var(--body);
+      font: 700 11px/1 "JetBrains Mono", "Cascadia Mono", Consolas, monospace;
+    }
+
+    .timeline-wrap {
+      position: relative;
+      min-height: 0;
+      overflow: hidden;
+      cursor: grab;
+      background:
+        linear-gradient(90deg, rgba(250, 249, 245, 0.065) 1px, transparent 1px) 0 0 / 56px 100%,
+        linear-gradient(180deg, rgba(250, 249, 245, 0.055) 1px, transparent 1px) 0 0 / 100% 48px,
+        var(--surface-dark);
+    }
+
+    .timeline-wrap.drag-over {
+      box-shadow: inset 0 0 0 3px rgba(204, 120, 92, 0.72);
+    }
+
+    .timeline-wrap.is-panning {
+      cursor: grabbing;
+    }
+
+    .timeline-wrap.is-scrubbing {
+      cursor: ew-resize;
+    }
+
+    .timeline-wrap.is-marker-hover {
+      cursor: ew-resize;
+    }
+
+    canvas {
+      position: absolute;
+      inset: 0;
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    .time-readout {
+      position: absolute;
+      left: 20px;
+      top: 18px;
+      padding: 9px 12px;
+      border: 1px solid rgba(250, 249, 245, 0.16);
+      border-radius: var(--radius-md);
+      background: rgba(37, 35, 32, 0.82);
+      color: var(--on-dark);
+      font: 600 24px/1 "JetBrains Mono", "Cascadia Mono", Consolas, monospace;
+      pointer-events: none;
+    }
+
+    .status {
+      position: absolute;
+      top: 18px;
+      right: 20px;
+      max-width: min(48%, 520px);
+      padding: 9px 12px;
+      border: 1px solid rgba(250, 249, 245, 0.12);
+      border-radius: var(--radius-md);
+      background: rgba(37, 35, 32, 0.72);
+      color: var(--on-dark-soft);
+      font-size: 12px;
+      line-height: 1.35;
+      text-align: right;
+      pointer-events: none;
+    }
+
+    .timeline-help {
+      position: absolute;
+      left: 20px;
+      bottom: 16px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      max-width: calc(100% - 40px);
+      pointer-events: none;
+    }
+
+    .help-chip {
+      border: 1px solid rgba(250, 249, 245, 0.12);
+      border-radius: 999px;
+      padding: 6px 9px;
+      background: rgba(37, 35, 32, 0.7);
+      color: var(--on-dark-soft);
+      font-size: 11px;
+      font-weight: 600;
+      line-height: 1;
+    }
+
+    .marker-strip {
+      display: grid;
+      grid-template-rows: 36px minmax(0, 1fr);
+      min-height: 0;
+      border-top: 1px solid var(--hairline);
+      background: var(--canvas);
+    }
+
+    .marker-head,
+    .marker-row {
+      display: grid;
+      grid-template-columns: 104px minmax(120px, 0.72fr) minmax(160px, 1fr) 58px;
+      gap: 10px;
+      align-items: center;
+      padding: 0 20px;
+    }
+
+    .marker-head {
+      border-bottom: 1px solid var(--hairline-soft);
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .marker-list {
+      min-height: 0;
+      overflow: auto;
+    }
+
+    .marker-row {
+      min-height: 42px;
+      border-bottom: 1px solid var(--hairline-soft);
+      cursor: pointer;
+    }
+
+    .marker-row:hover {
+      background: var(--surface);
+    }
+
+    .marker-row.active {
+      background: var(--surface-card);
+      box-shadow: inset 3px 0 0 var(--primary);
+    }
+
+    .marker-time {
+      color: var(--ink);
+      font: 600 13px/1 "JetBrains Mono", "Cascadia Mono", Consolas, monospace;
+    }
+
+    .marker-text,
+    .marker-comment {
+      overflow: hidden;
+      color: var(--body);
+      font-size: 13px;
+      line-height: 1.35;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .marker-comment {
+      color: var(--muted);
+    }
+
+    .marker-note {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      justify-self: center;
+    }
+
+    .marker-thumb,
+    .marker-thumb-empty {
+      width: 42px;
+      height: 28px;
+      border: 1px solid var(--hairline);
+      border-radius: var(--radius-sm);
+      justify-self: end;
+      background: var(--surface-dark-elevated);
+    }
+
+    .marker-thumb {
+      object-fit: cover;
+    }
+
+    .marker-thumb-empty {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--muted-soft);
+    }
+
+    .side {
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr);
+      min-height: 0;
+      background: var(--surface);
+    }
+
+    .editor {
+      display: grid;
+      gap: 14px;
+      padding: 18px;
+      border-bottom: 1px solid var(--hairline);
+      background: var(--surface-card);
+    }
+
+    .panel-title {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .panel-title h2 {
+      margin: 0;
+      font-family: "Times New Roman", "Yu Mincho", serif;
+      font-size: 28px;
+      font-weight: 400;
+      line-height: 1.1;
+      letter-spacing: 0;
+    }
+
+    .panel-sub {
+      margin-top: 5px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .selected-chip {
+      flex: 0 0 auto;
+      border: 1px solid rgba(204, 120, 92, 0.26);
+      border-radius: 999px;
+      padding: 7px 10px;
+      background: rgba(204, 120, 92, 0.16);
+      color: #f0b39e;
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1;
+    }
+
+    .editor-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+
+    .image-tools {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 10px;
+      align-items: stretch;
+    }
+
+    .image-preview {
+      display: grid;
+      grid-template-columns: 72px minmax(0, 1fr);
+      gap: 10px;
+      align-items: center;
+      min-height: 58px;
+      border: 1px dashed var(--hairline);
+      border-radius: var(--radius-md);
+      padding: 8px;
+      background: var(--surface-dark-elevated);
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.35;
+      overflow: hidden;
+    }
+
+    .image-preview.empty {
+      grid-template-columns: 1fr;
+      place-items: center;
+      min-height: 48px;
+    }
+
+    .image-preview img {
+      width: 72px;
+      height: 42px;
+      border-radius: var(--radius-sm);
+      object-fit: cover;
+    }
+
+    .image-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .micro-actions,
+    .button-row {
+      flex-wrap: wrap;
+    }
+
+    .micro-actions button {
+      min-height: 32px;
+      padding: 0 10px;
+      background: var(--surface-dark-elevated);
+      font-size: 12px;
+    }
+
+    .micro-actions button {
+      min-width: 64px;
+      font-family: "JetBrains Mono", "Cascadia Mono", Consolas, monospace;
+      font-size: 11px;
+    }
+
+    .export-panel {
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr);
+      min-height: 0;
+      padding: 16px 18px 18px;
+      gap: 10px;
+      background: var(--surface);
+    }
+
+    .export-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      color: var(--body);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .export-title span:last-child {
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    .format-toggle {
+      display: inline-flex;
+      padding: 3px;
+      gap: 2px;
+      border: 1px solid var(--hairline);
+      border-radius: 999px;
+      background: var(--surface-dark-elevated);
+    }
+
+    .format-toggle button {
+      min-height: 26px;
+      padding: 0 12px;
+      border: 0;
+      border-radius: 999px;
+      background: transparent;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .format-toggle button:hover {
+      background: transparent;
+      color: var(--body);
+    }
+
+    .format-toggle button.active {
+      background: var(--primary);
+      color: var(--on-primary);
+    }
+
+    .beat-readout {
+      align-self: end;
+      padding: 0 2px 6px;
+      color: var(--muted);
+      font: 600 12px/1.3 "JetBrains Mono", "Cascadia Mono", Consolas, monospace;
+    }
+
+    .beat-readout strong {
+      color: var(--body);
+      font-weight: 700;
+    }
+
+    .beat-readout .off {
+      color: var(--accent-amber);
+    }
+
+    .beat-readout .on {
+      color: var(--success);
+    }
+
+    .json-box {
+      min-height: 0;
+      overflow: hidden;
+      border: 1px solid var(--hairline);
+      border-radius: var(--radius-lg);
+      background: var(--surface-dark);
+      box-shadow: var(--shadow-soft);
+    }
+
+    .json-box textarea {
+      height: 100%;
+      min-height: 180px;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      color: var(--on-dark);
+      caret-color: var(--primary);
+      font: 12px/1.55 "JetBrains Mono", "Cascadia Mono", Consolas, monospace;
+    }
+
+    .json-box textarea:focus {
+      box-shadow: none;
+    }
+
+    .footer {
+      display: grid;
+      grid-template-columns: minmax(280px, 1fr) auto;
+      align-items: center;
+      gap: 16px;
+      padding: 12px 24px;
+      background: var(--surface-dark);
+      color: var(--on-dark);
+    }
+
+    .progress {
+      display: grid;
+      grid-template-columns: 78px minmax(120px, 1fr) 78px;
+      gap: 10px;
+      align-items: center;
+      color: var(--on-dark-soft);
+      font: 600 12px/1 "JetBrains Mono", "Cascadia Mono", Consolas, monospace;
+    }
+
+    .range {
+      width: 100%;
+      accent-color: var(--primary);
+    }
+
+    .transport {
+      justify-self: center;
+    }
+
+    .transport button,
+    .transport select {
+      border-color: rgba(250, 249, 245, 0.14);
+      background: var(--surface-dark-elevated);
+      color: var(--on-dark);
+    }
+
+    .transport button:hover,
+    .transport select:hover {
+      border-color: rgba(250, 249, 245, 0.24);
+      background: #302e2a;
+    }
+
+    .transport button.primary {
+      min-width: 76px;
+      border-color: var(--primary);
+      background: var(--primary);
+    }
+
+    .rate-select {
+      width: 78px;
+      min-height: 36px;
+      color: var(--on-dark);
+    }
+
+    .empty-message {
+      padding: 28px 20px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    @media (max-width: 1080px) {
+      body {
+        overflow: auto;
+      }
+
+      .app {
+        height: auto;
+        min-height: 100vh;
+        min-width: 0;
+        grid-template-rows: auto auto auto;
+      }
+
+      .topbar,
+      .main,
+      .footer {
+        grid-template-columns: 1fr;
+      }
+
+      .topbar,
+      .footer {
+        align-items: stretch;
+        padding: 14px;
+      }
+
+      .file-row,
+      .top-actions,
+      .transport {
+        justify-content: flex-start;
+        flex-wrap: wrap;
+      }
+
+      .timeline-shell {
+        min-height: 680px;
+        border-right: 0;
+      }
+
+      .timeline-toolbar {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .toolbar-note {
+        grid-column: 1 / -1;
+        justify-self: start;
+        text-align: left;
+      }
+
+      .side {
+        min-height: 560px;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .timeline-toolbar,
+      .editor-grid,
+      .marker-head,
+      .marker-row {
+        grid-template-columns: 1fr;
+      }
+
+      .marker-head {
+        display: none;
+      }
+
+      .marker-row {
+        align-items: start;
+        padding: 12px 16px;
+      }
+
+      .status {
+        display: none;
+      }
+
+      .time-readout {
+        font-size: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app" id="app">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true"><span></span></div>
+        <div class="brand-copy">
+          <h1 id="appTitle">タイミングエディタ</h1>
+          <div class="brand-sub">音ハメ用マーカーエディタ</div>
+        </div>
+      </div>
+      <div class="file-row">
+        <button id="loadBundled" class="primary" data-icon="music" title="Assets/StageData/stone/stone.m4a を読み込み">標準音源</button>
+        <button id="chooseAudio" data-icon="folder-open">音源を選択</button>
+        <input id="audioInput" class="hidden-input" type="file" accept="audio/*">
+        <span id="fileName" class="file-name">未読み込み</span>
+      </div>
+      <div class="top-actions">
+        <button id="importJson" data-icon="file-input">JSON読込</button>
+        <input id="jsonInput" class="hidden-input" type="file" accept="application/json,.json,text/plain">
+        <button id="copyJson" data-icon="copy">コピー</button>
+        <button id="downloadJson" data-icon="download">保存</button>
+      </div>
+    </header>
+
+    <main class="main">
+      <section class="timeline-shell" aria-label="タイムライン">
+        <div class="timeline-toolbar">
+          <label class="wide">曲名
+            <input id="trackName" type="text" placeholder="例: 石工">
+          </label>
+          <label class="wide">作曲者
+            <input id="composer" type="text" placeholder="任意">
+          </label>
+          <label class="wide">スラッグ
+            <input id="slug" type="text" placeholder="例: stone" autocapitalize="off" autocomplete="off" spellcheck="false">
+          </label>
+          <label>BPM
+            <input id="bpm" type="number" value="144" min="1" step="0.001">
+          </label>
+          <label>拍子
+            <input id="measure" type="number" value="4" min="1" max="16" step="1">
+          </label>
+          <label>拍オフセット
+            <input id="beatOffset" type="number" value="0" step="0.001">
+          </label>
+          <label>スナップ
+            <select id="snap">
+              <option value="0">なし</option>
+              <option value="0.25">16分</option>
+              <option value="0.5">8分</option>
+              <option value="1">4分</option>
+            </select>
+          </label>
+          <label>ズーム
+            <input id="zoom" type="number" value="4" min="0.25" max="12" step="0.25">
+          </label>
+          <div class="toolbar-note">
+            <span class="kbd">Space</span> 再生/停止
+            <span class="kbd">K</span> 現在位置にメモ
+            <span class="kbd">I</span> 画像
+            <span class="kbd">Del</span> 選択を削除
+            <span class="kbd">←</span><span class="kbd">→</span> スクロール
+            <span class="kbd">+/-</span> ズーム
+            <span class="kbd">Shift</span> + クリックでメモ追加
+          </div>
+        </div>
+
+        <div class="timeline-wrap" id="timelineWrap">
+          <canvas id="waveCanvas"></canvas>
+          <div id="timeReadout" class="time-readout">00:00.000</div>
+          <div id="status" class="status">音源を読み込んでください。音声ファイルはここへドロップできます。</div>
+          <div class="timeline-help" aria-hidden="true">
+            <span class="help-chip">クリック: シーク</span>
+            <span class="help-chip">ドラッグ: 横スクロール</span>
+            <span class="help-chip">ホイール: 横スクロール</span>
+            <span class="help-chip">Ctrl+ホイール: ズーム</span>
+            <span class="help-chip">Shift+クリック: メモ追加</span>
+            <span class="help-chip">行ダブルクリック: その時刻へ</span>
+          </div>
+        </div>
+
+        <div class="marker-strip">
+          <div class="marker-head" aria-hidden="true">
+            <span>時刻</span>
+            <span>ラベル</span>
+            <span>メモ</span>
+            <span>画像</span>
+          </div>
+          <div id="markerStrip" class="marker-list"></div>
+        </div>
+      </section>
+
+      <aside class="side" aria-label="マーカー編集">
+        <section class="editor">
+          <div class="panel-title">
+            <div>
+              <h2>選択マーカー</h2>
+              <div class="panel-sub">打点の微調整、コメント、複製までここで完結します。</div>
+            </div>
+            <span id="selectedSummary" class="selected-chip">未選択</span>
+          </div>
+
+          <div class="editor-grid">
+            <label>時刻
+              <input id="markerTime" type="number" step="0.001" min="0">
+            </label>
+            <div id="beatReadout" class="beat-readout">小節:拍 —</div>
+          </div>
+          <label>ラベル
+            <input id="markerLabel" type="text" placeholder="例: タイル出現 1-A">
+          </label>
+          <label>コメント
+            <textarea id="markerComment" placeholder="ここに音ハメ指示を書く"></textarea>
+          </label>
+
+          <div class="field-label">メモ画像
+            <div class="image-tools">
+              <div id="imagePreview" class="image-preview empty">画像なし</div>
+              <div class="image-actions">
+                <button id="attachImage" type="button" data-icon="image">画像</button>
+                <button id="clearImage" type="button" data-icon="x" class="danger">外す</button>
+              </div>
+            </div>
+            <input id="markerImageInput" class="hidden-input" type="file" accept="image/*">
+          </div>
+
+          <div class="button-row">
+            <button id="addMarker" class="primary" data-icon="plus">キー追加</button>
+            <button id="updateMarker" data-icon="save">保存</button>
+            <button id="timeFromPlayhead" data-icon="locate">現在へ</button>
+            <button id="seekSelected" data-icon="target">選択へ</button>
+            <button id="deleteMarker" class="danger" data-icon="trash">削除</button>
+          </div>
+
+          <div class="micro-actions" aria-label="微調整">
+            <button id="nudgeBackLarge">-50ms</button>
+            <button id="nudgeBack">-10ms</button>
+            <button id="nudgeForward">+10ms</button>
+            <button id="nudgeForwardLarge">+50ms</button>
+            <button id="snapMarker" data-icon="magnet">拍へ</button>
+            <button id="duplicateMarker" data-icon="copy">複製</button>
+          </div>
+        </section>
+
+        <section class="export-panel">
+          <div class="export-title">
+            <div class="format-toggle" role="tablist" aria-label="書き出し形式">
+              <button id="formatMarkdown" class="active" type="button" role="tab" aria-selected="true">Claude向け</button>
+              <button id="formatJson" type="button" role="tab" aria-selected="false">JSON</button>
+            </div>
+            <span id="markerCount">0 keys</span>
+          </div>
+          <div class="json-box">
+            <textarea id="exportText" spellcheck="false"></textarea>
+          </div>
+        </section>
+      </aside>
+    </main>
+
+    <footer class="footer">
+      <div class="progress">
+        <span id="currentTime">00:00.000</span>
+        <input id="seek" class="range" type="range" min="0" max="0" value="0" step="0.001" aria-label="再生位置">
+        <span id="duration">00:00.000</span>
+      </div>
+      <div class="transport">
+        <button id="jumpBack" class="icon" data-icon="skip-back" title="-1秒" aria-label="1秒戻る"></button>
+        <button id="play" class="primary" data-icon="play">再生</button>
+        <button id="jumpForward" class="icon" data-icon="skip-forward" title="+1秒" aria-label="1秒進む"></button>
+        <select id="playbackRate" class="rate-select" title="再生速度" aria-label="再生速度">
+          <option value="0.5">0.5x</option>
+          <option value="0.75">0.75x</option>
+          <option value="1" selected>1x</option>
+          <option value="1.25">1.25x</option>
+        </select>
+      </div>
+    </footer>
+  </div>
+
+  <audio id="audio" preload="auto"></audio>
+
+  <script>
+    const audio = document.getElementById("audio");
+    const canvas = document.getElementById("waveCanvas");
+    const ctx = canvas.getContext("2d", { alpha: false });
+    const waveformCanvas = document.createElement("canvas");
+    const waveformCtx = waveformCanvas.getContext("2d");
+    const ui = {
+      app: document.getElementById("app"),
+      loadBundled: document.getElementById("loadBundled"),
+      chooseAudio: document.getElementById("chooseAudio"),
+      audioInput: document.getElementById("audioInput"),
+      fileName: document.getElementById("fileName"),
+      appTitle: document.getElementById("appTitle"),
+      trackName: document.getElementById("trackName"),
+      composer: document.getElementById("composer"),
+      slug: document.getElementById("slug"),
+      bpm: document.getElementById("bpm"),
+      measure: document.getElementById("measure"),
+      beatOffset: document.getElementById("beatOffset"),
+      snap: document.getElementById("snap"),
+      zoom: document.getElementById("zoom"),
+      status: document.getElementById("status"),
+      timeReadout: document.getElementById("timeReadout"),
+      timelineWrap: document.getElementById("timelineWrap"),
+      markerStrip: document.getElementById("markerStrip"),
+      markerTime: document.getElementById("markerTime"),
+      markerLabel: document.getElementById("markerLabel"),
+      markerComment: document.getElementById("markerComment"),
+      beatReadout: document.getElementById("beatReadout"),
+      formatMarkdown: document.getElementById("formatMarkdown"),
+      formatJson: document.getElementById("formatJson"),
+      markerImageInput: document.getElementById("markerImageInput"),
+      imagePreview: document.getElementById("imagePreview"),
+      attachImage: document.getElementById("attachImage"),
+      clearImage: document.getElementById("clearImage"),
+      selectedSummary: document.getElementById("selectedSummary"),
+      addMarker: document.getElementById("addMarker"),
+      updateMarker: document.getElementById("updateMarker"),
+      timeFromPlayhead: document.getElementById("timeFromPlayhead"),
+      seekSelected: document.getElementById("seekSelected"),
+      deleteMarker: document.getElementById("deleteMarker"),
+      nudgeBackLarge: document.getElementById("nudgeBackLarge"),
+      nudgeBack: document.getElementById("nudgeBack"),
+      nudgeForward: document.getElementById("nudgeForward"),
+      nudgeForwardLarge: document.getElementById("nudgeForwardLarge"),
+      snapMarker: document.getElementById("snapMarker"),
+      duplicateMarker: document.getElementById("duplicateMarker"),
+      exportText: document.getElementById("exportText"),
+      markerCount: document.getElementById("markerCount"),
+      seek: document.getElementById("seek"),
+      currentTime: document.getElementById("currentTime"),
+      duration: document.getElementById("duration"),
+      play: document.getElementById("play"),
+      playbackRate: document.getElementById("playbackRate"),
+      jumpBack: document.getElementById("jumpBack"),
+      jumpForward: document.getElementById("jumpForward"),
+      copyJson: document.getElementById("copyJson"),
+      downloadJson: document.getElementById("downloadJson"),
+      importJson: document.getElementById("importJson"),
+      jsonInput: document.getElementById("jsonInput"),
+    };
+
+    let audioContext;
+    let peaks = [];
+    let duration = 0;
+    let markers = [
+      { time: 5.416667, label: "タイル予告 1-A", comment: "" },
+      { time: 6.25, label: "タイル出現 1-A", comment: "" },
+      { time: 8.75, label: "一斉落下 1", comment: "" },
+      { time: 9.583333, label: "ベルト流し 1", comment: "" },
+      { time: 19.166667, label: "落下予告 1-A", comment: "" },
+      { time: 20, label: "ランダム落下 1-A", comment: "" },
+      { time: 22.083333, label: "落下後ベルト流し 1", comment: "" },
+    ];
+    let selectedId = null;
+    let idSeed = 1;
+    let exportDirty = false;
+    let exportFormat = "markdown";
+    const STORAGE_PREFIX = "timingEditor:";
+    const LAST_SLUG_KEY = "timingEditor:lastSlug";
+    let autoSaveTimer = 0;
+    let currentStorageSlug = "";
+    let quotaWarned = false;
+    let viewCenter = 0;
+    let followPlayhead = true;
+    let drawFrameId = 0;
+    let playbackFrameId = 0;
+    let lastPlaybackFrameAt = 0;
+    let lastTimeLabel = "";
+    let lastSeekValue = "";
+    let audioObjectUrl = "";
+    let canvasPixelWidth = 0;
+    let canvasPixelHeight = 0;
+    let canvasDpr = 0;
+    let waveformDuration = 0;
+    let timelineDragRect = null;
+    let isTimelinePanning = false;
+    let isPlayheadDragging = false;
+    let isMarkerDragging = false;
+    let draggedMarkerId = null;
+    let markerDragMoved = false;
+    let suppressTimelineClick = false;
+    let panStartX = 0;
+    let panStartCenter = 0;
+    let panStartWindowDuration = 0;
+
+    markers = markers.map((marker) => ({ id: idSeed++, ...marker }));
+
+    const iconPaths = {
+      copy: '<rect x="8" y="8" width="12" height="12" rx="2"></rect><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"></path>',
+      download: '<path d="M12 3v12"></path><path d="m7 10 5 5 5-5"></path><path d="M5 21h14"></path>',
+      "file-input": '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><path d="M14 2v6h6"></path><path d="M10 13h6"></path><path d="m13 10 3 3-3 3"></path>',
+      "folder-open": '<path d="M6 14 8 5a2 2 0 0 1 2-1h3l2 3h5a2 2 0 0 1 2 2v3"></path><path d="M3 8h5l2 3h11l-3 8a2 2 0 0 1-2 1H5a2 2 0 0 1-2-2Z"></path>',
+      image: '<rect x="3" y="5" width="18" height="14" rx="2"></rect><circle cx="8.5" cy="10.5" r="1.5"></circle><path d="m21 15-5-5L5 21"></path>',
+      locate: '<path d="M12 2v3"></path><path d="M12 19v3"></path><path d="M2 12h3"></path><path d="M19 12h3"></path><circle cx="12" cy="12" r="7"></circle><circle cx="12" cy="12" r="2"></circle>',
+      magnet: '<path d="M6 15V7a4 4 0 0 1 8 0v8"></path><path d="M6 15a6 6 0 0 0 12 0V7"></path><path d="M6 11h4"></path><path d="M14 11h4"></path>',
+      music: '<path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle>',
+      pause: '<path d="M8 5v14"></path><path d="M16 5v14"></path>',
+      play: '<path d="m8 5 11 7-11 7Z"></path>',
+      plus: '<path d="M12 5v14"></path><path d="M5 12h14"></path>',
+      save: '<path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"></path><path d="M17 21v-8H7v8"></path><path d="M7 3v5h8"></path>',
+      "skip-back": '<path d="m19 20-10-8 10-8v16Z"></path><path d="M5 19V5"></path>',
+      "skip-forward": '<path d="m5 4 10 8-10 8V4Z"></path><path d="M19 5v14"></path>',
+      target: '<circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle>',
+      trash: '<path d="M3 6h18"></path><path d="M8 6V4h8v2"></path><path d="M19 6l-1 14H6L5 6"></path><path d="M10 11v6"></path><path d="M14 11v6"></path>',
+      x: '<path d="M18 6 6 18"></path><path d="m6 6 12 12"></path>',
+    };
+
+    function iconSvg(name) {
+      return `<svg class="icon-svg" aria-hidden="true" viewBox="0 0 24 24">${iconPaths[name] || ""}</svg>`;
+    }
+
+    function setButtonIcon(button, name, label = button.textContent.trim()) {
+      const nextLabel = label || "";
+      if (button.dataset.renderedIcon === name && button.dataset.renderedLabel === nextLabel) return;
+      button.dataset.renderedIcon = name;
+      button.dataset.renderedLabel = nextLabel;
+      button.innerHTML = `${iconSvg(name)}${nextLabel ? `<span>${escapeHtml(nextLabel)}</span>` : ""}`;
+    }
+
+    function decorateIcons() {
+      document.querySelectorAll("button[data-icon]").forEach((button) => {
+        setButtonIcon(button, button.dataset.icon);
+      });
+    }
+
+    function fullDuration() {
+      return duration || Math.max(35, audio.duration || 35);
+    }
+
+    function clamp(value, min, max) {
+      return Math.max(min, Math.min(max, value));
+    }
+
+    function clampViewCenter(value) {
+      return clamp(Number(value) || 0, 0, fullDuration());
+    }
+
+    function centerTimelineOn(time, follow = false) {
+      viewCenter = clampViewCenter(time);
+      followPlayhead = follow;
+      requestDraw();
+    }
+
+    function setTimelineZoom(nextZoom, anchorTime = null, anchorRatio = 0.5) {
+      const zoom = clamp(nextZoom, 0.25, 12);
+      const full = fullDuration();
+      const windowDuration = full / zoom;
+      ui.zoom.value = String(Number(zoom.toFixed(2)));
+      followPlayhead = false;
+      if (anchorTime == null) {
+        viewCenter = clampViewCenter(viewCenter);
+      } else {
+        viewCenter = clampViewCenter(anchorTime + windowDuration * (0.5 - anchorRatio));
+      }
+      requestDraw();
+    }
+
+    function requestDraw() {
+      if (drawFrameId) return;
+      drawFrameId = requestAnimationFrame(() => {
+        drawFrameId = 0;
+        draw();
+      });
+    }
+
+    function formatTime(value) {
+      const safe = Math.max(0, Number(value) || 0);
+      const minutes = Math.floor(safe / 60);
+      const seconds = Math.floor(safe % 60);
+      const millis = Math.floor((safe - Math.floor(safe)) * 1000);
+      return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}.${String(millis).padStart(3, "0")}`;
+    }
+
+    function markerColor(marker, index = 0) {
+      const palette = ["#cc785c", "#5db8a6", "#e8a55a", "#5db872", "#d4a017", "#b78be6"];
+      return marker.color || palette[(marker.id + index) % palette.length];
+    }
+
+    function visibleWindow() {
+      const zoom = Math.max(0.25, Number(ui.zoom.value) || 1);
+      const full = fullDuration();
+      const windowDuration = full / zoom;
+      const center = followPlayhead ? (audio.currentTime || 0) : viewCenter;
+      if (followPlayhead) viewCenter = clampViewCenter(center);
+      let start = center - windowDuration * 0.5;
+      start = Math.max(0, Math.min(start, Math.max(0, full - windowDuration)));
+      return { start, end: start + windowDuration, full, windowDuration };
+    }
+
+    function timeToX(time, rect, windowInfo) {
+      return ((time - windowInfo.start) / windowInfo.windowDuration) * rect.width;
+    }
+
+    function xToTime(x, rect, windowInfo) {
+      return windowInfo.start + (x / rect.width) * windowInfo.windowDuration;
+    }
+
+    function setAudioTime(nextTime, keepView = false) {
+      const limit = duration || audio.duration || fullDuration();
+      const safeTime = clamp(Number(nextTime) || 0, 0, limit);
+      if (!audio.src && !duration) {
+        viewCenter = clampViewCenter(safeTime);
+        requestDraw();
+        return;
+      }
+      try {
+        audio.currentTime = safeTime;
+      } catch (error) {
+        viewCenter = clampViewCenter(safeTime);
+        requestDraw();
+        return;
+      }
+      if (keepView) viewCenter = clampViewCenter(audio.currentTime);
+      syncTransport();
+    }
+
+    function timelinePointerTime(event, rect = canvas.getBoundingClientRect()) {
+      return xToTime(event.clientX - rect.left, rect, visibleWindow());
+    }
+
+    function isNearPlayhead(event, rect, windowInfo) {
+      if (!audio.src && !duration) return false;
+      const localX = event.clientX - rect.left;
+      const playX = timeToX(audio.currentTime || 0, rect, windowInfo);
+      return Math.abs(localX - playX) <= 18;
+    }
+
+    // ポインタ位置に最も近い（しきい値内の）マーカーを返す。無ければ null。
+    function markerAtPointer(event, rect, windowInfo) {
+      const localX = event.clientX - rect.left;
+      let best = null;
+      let bestDist = 7;
+      for (const marker of markers) {
+        if (marker.time < windowInfo.start || marker.time > windowInfo.end) continue;
+        const dist = Math.abs(localX - timeToX(marker.time, rect, windowInfo));
+        if (dist <= bestDist) {
+          bestDist = dist;
+          best = marker;
+        }
+      }
+      return best;
+    }
+
+    function resetWaveformCache() {
+      waveformCanvas.width = 0;
+      waveformCanvas.height = 0;
+      waveformDuration = 0;
+    }
+
+    function peakAt(position) {
+      if (!peaks.length) return 0;
+      const index = clamp(position, 0, peaks.length - 1);
+      const left = Math.floor(index);
+      const right = Math.min(peaks.length - 1, left + 1);
+      const mix = index - left;
+      return peaks[left] * (1 - mix) + peaks[right] * mix;
+    }
+
+    function rebuildWaveformCache() {
+      const full = duration || fullDuration();
+      if (!peaks.length || !full) {
+        resetWaveformCache();
+        return;
+      }
+
+      const width = Math.max(900, Math.min(4800, Math.round(full * 24)));
+      const height = 144;
+      waveformCanvas.width = width;
+      waveformCanvas.height = height;
+      waveformDuration = full;
+      waveformCtx.setTransform(1, 0, 0, 1, 0, 0);
+      waveformCtx.clearRect(0, 0, width, height);
+
+      const mid = height * 0.52;
+      const amp = height * 0.35;
+      const step = 2;
+
+      waveformCtx.fillStyle = "rgba(250, 249, 245, 0.78)";
+      waveformCtx.beginPath();
+      waveformCtx.moveTo(0, mid);
+      for (let x = 0; x <= width; x += step) {
+        const peak = peakAt((x / width) * (peaks.length - 1));
+        waveformCtx.lineTo(x, mid - peak * amp);
+      }
+      for (let x = width; x >= 0; x -= step) {
+        const peak = peakAt((x / width) * (peaks.length - 1));
+        waveformCtx.lineTo(x, mid + peak * amp);
+      }
+      waveformCtx.closePath();
+      waveformCtx.fill();
+
+      waveformCtx.strokeStyle = "rgba(250, 249, 245, 0.26)";
+      waveformCtx.lineWidth = 1;
+      waveformCtx.beginPath();
+      waveformCtx.moveTo(0, mid);
+      waveformCtx.lineTo(width, mid);
+      waveformCtx.stroke();
+    }
+
+    function drawCachedWaveform(rect, windowInfo) {
+      if (!waveformCanvas.width || !waveformDuration) return false;
+      const sourceStart = clamp((windowInfo.start / waveformDuration) * waveformCanvas.width, 0, waveformCanvas.width);
+      const sourceWidth = clamp((windowInfo.windowDuration / waveformDuration) * waveformCanvas.width, 1, waveformCanvas.width - sourceStart);
+      ctx.imageSmoothingEnabled = true;
+      ctx.drawImage(
+        waveformCanvas,
+        sourceStart,
+        0,
+        sourceWidth,
+        waveformCanvas.height,
+        0,
+        0,
+        rect.width,
+        rect.height,
+      );
+      ctx.imageSmoothingEnabled = false;
+      return true;
+    }
+
+    function draw() {
+      const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+      const rect = canvas.getBoundingClientRect();
+      if (rect.width === 0 || rect.height === 0) return;
+      const nextWidth = Math.floor(rect.width * dpr);
+      const nextHeight = Math.floor(rect.height * dpr);
+      if (canvas.width !== nextWidth || canvas.height !== nextHeight || canvasDpr !== dpr) {
+        canvas.width = nextWidth;
+        canvas.height = nextHeight;
+        canvasPixelWidth = nextWidth;
+        canvasPixelHeight = nextHeight;
+        canvasDpr = dpr;
+      }
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      const windowInfo = visibleWindow();
+      const mid = rect.height * 0.52;
+      const fastMode = isTimelinePanning || isPlayheadDragging || !audio.paused;
+      ctx.fillStyle = "#181715";
+      ctx.fillRect(0, 0, rect.width, rect.height);
+
+      drawBeatGrid(rect, windowInfo, fastMode);
+
+      if (!drawCachedWaveform(rect, windowInfo)) {
+        ctx.strokeStyle = "rgba(250, 249, 245, 0.22)";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(0, mid);
+        ctx.lineTo(rect.width, mid);
+        ctx.stroke();
+      }
+
+      markers.forEach((marker, index) => {
+        if (marker.time < windowInfo.start || marker.time > windowInfo.end) return;
+        const x = timeToX(marker.time, rect, windowInfo);
+        const color = markerColor(marker, index);
+        const selected = marker.id === selectedId;
+        ctx.strokeStyle = selected ? "#faf9f5" : color;
+        ctx.lineWidth = selected ? 3 : 2;
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, rect.height);
+        ctx.stroke();
+        ctx.fillStyle = color;
+        ctx.fillRect(x - 5, 70, 10, 10);
+        if (!fastMode && (windowInfo.windowDuration <= 14 || selected)) {
+          ctx.fillStyle = selected ? "#faf9f5" : "rgba(250, 249, 245, 0.76)";
+          ctx.font = "600 12px Yu Gothic UI, sans-serif";
+          ctx.fillText(marker.label || "メモ", x + 9, 78);
+        }
+      });
+
+      const playX = timeToX(audio.currentTime || 0, rect, windowInfo);
+      ctx.strokeStyle = "#cc785c";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(playX, 0);
+      ctx.lineTo(playX, rect.height);
+      ctx.stroke();
+      ctx.fillStyle = "#cc785c";
+      ctx.beginPath();
+      ctx.arc(playX, 24, 4, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    function drawBeatGrid(rect, windowInfo, fastMode = false) {
+      const offset = beatOffsetSec();
+      const measure = measureCount();
+      const beat = beatDuration();
+      const beatPx = rect.width * beat / windowInfo.windowDuration;
+      const measurePx = beatPx * measure;
+      let stepBeats = 1;
+      if (beatPx < 8) stepBeats = measure;
+      if (measurePx < 28) stepBeats = measure * 4;
+      if (fastMode) {
+        stepBeats = Math.max(stepBeats, measure);
+        if (measurePx < 64) stepBeats = Math.max(stepBeats, measure * 4);
+      }
+      const first = Math.floor((windowInfo.start - offset) / beat / stepBeats) * stepBeats - stepBeats;
+      const last = Math.ceil((windowInfo.end - offset) / beat) + 1;
+      for (let i = first; i <= last; i += stepBeats) {
+        const time = offset + i * beat;
+        const x = timeToX(time, rect, windowInfo);
+        const strong = i % measure === 0;
+        ctx.strokeStyle = strong ? "rgba(250, 249, 245, 0.24)" : "rgba(250, 249, 245, 0.1)";
+        ctx.lineWidth = strong ? 1.5 : 1;
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, rect.height);
+        ctx.stroke();
+        if (!fastMode && strong && (measurePx > 86 || i % (measure * 4) === 0)) {
+          ctx.fillStyle = "rgba(250, 249, 245, 0.48)";
+          ctx.font = "11px Cascadia Mono, Consolas, monospace";
+          ctx.fillText(formatTime(time), x + 4, rect.height - 12);
+        }
+      }
+    }
+
+    function renderMarkers() {
+      markers.sort((a, b) => a.time - b.time);
+      const fragment = document.createDocumentFragment();
+      if (!markers.length) {
+        const empty = document.createElement("div");
+        empty.className = "empty-message";
+        empty.textContent = "まだマーカーがありません。再生しながらキー追加、または K でメモを追加できます。I で選択メモに画像を添付できます。";
+        fragment.appendChild(empty);
+      }
+      for (const marker of markers) {
+        const row = document.createElement("div");
+        row.className = `marker-row${marker.id === selectedId ? " active" : ""}`;
+        row.dataset.id = marker.id;
+        row.innerHTML = `
+          <span class="marker-time">${formatTime(marker.time)}</span>
+          <span class="marker-text">${escapeHtml(marker.label || "")}</span>
+          <span class="marker-comment">${escapeHtml(marker.comment || "")}</span>
+          ${marker.imageDataUrl
+            ? `<img class="marker-thumb" alt="" src="${escapeAttribute(marker.imageDataUrl)}">`
+            : `<span class="marker-thumb-empty">${iconSvg("image")}</span>`}
+        `;
+        fragment.appendChild(row);
+      }
+      ui.markerStrip.replaceChildren(fragment);
+      ui.markerCount.textContent = `${markers.length} keys`;
+      updateExport();
+      updateSelectedSummary();
+      updateImagePreview();
+      requestDraw();
+      scheduleAutoSave();
+    }
+
+    function escapeHtml(value) {
+      return String(value).replace(/[&<>"']/g, (char) => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        "\"": "&quot;",
+        "'": "&#039;",
+      }[char]));
+    }
+
+    function escapeAttribute(value) {
+      return escapeHtml(value).replace(/`/g, "&#096;");
+    }
+
+    function syncMarkerSelection() {
+      document.querySelectorAll(".marker-row").forEach((row) => {
+        row.classList.toggle("active", Number(row.dataset.id) === selectedId);
+      });
+      updateSelectedSummary();
+      updateImagePreview();
+      requestDraw();
+    }
+
+    function selectMarker(id, shouldRender = false) {
+      selectedId = id;
+      const marker = markers.find((item) => item.id === id);
+      if (!marker) return;
+      ui.markerTime.value = marker.time.toFixed(3);
+      ui.markerLabel.value = marker.label || "";
+      ui.markerComment.value = marker.comment || "";
+      if (shouldRender) {
+        renderMarkers();
+      } else {
+        syncMarkerSelection();
+      }
+    }
+
+    function updateSelectedSummary() {
+      const marker = markers.find((item) => item.id === selectedId);
+      ui.selectedSummary.textContent = marker ? formatTime(marker.time) : "未選択";
+      updateBeatReadout();
+    }
+
+    function readEditorMarker() {
+      return {
+        time: Math.max(0, Number(ui.markerTime.value) || 0),
+        label: ui.markerLabel.value.trim(),
+        comment: ui.markerComment.value.trim(),
+      };
+    }
+
+    function addMarker(label = "", sourceTime = null) {
+      const rawTime = sourceTime == null ? (audio.currentTime || Number(ui.markerTime.value) || 0) : sourceTime;
+      const time = snapTime(rawTime);
+      const marker = {
+        id: idSeed++,
+        time,
+        label: label || "メモ",
+        comment: "",
+      };
+      markers.push(marker);
+      ui.status.textContent = `マーカーを ${formatTime(time)} に追加しました`;
+      selectMarker(marker.id, true);
+    }
+
+    function updateSelected() {
+      const marker = markers.find((item) => item.id === selectedId);
+      if (!marker) return;
+      Object.assign(marker, readEditorMarker());
+      ui.status.textContent = `${formatTime(marker.time)} を保存しました`;
+      renderMarkers();
+    }
+
+    function autoUpdateSelected() {
+      const marker = markers.find((item) => item.id === selectedId);
+      if (!marker) return;
+      Object.assign(marker, readEditorMarker());
+      renderMarkers();
+    }
+
+    function setSelectedToPlayhead() {
+      const marker = markers.find((item) => item.id === selectedId);
+      if (!marker) return;
+      marker.time = snapTime(audio.currentTime || 0);
+      ui.status.textContent = `選択マーカーを ${formatTime(marker.time)} に移動しました`;
+      selectMarker(marker.id, true);
+    }
+
+    function seekToSelected() {
+      const marker = markers.find((item) => item.id === selectedId);
+      if (!marker) return;
+      audio.currentTime = marker.time;
+      centerTimelineOn(marker.time, false);
+      updateTransport();
+    }
+
+    function duplicateSelected() {
+      const marker = markers.find((item) => item.id === selectedId);
+      if (!marker) return;
+      const duplicate = {
+        ...marker,
+        id: idSeed++,
+        time: snapTime(marker.time + 0.1),
+        label: `${marker.label || "メモ"} copy`,
+      };
+      markers.push(duplicate);
+      ui.status.textContent = `${formatTime(duplicate.time)} に複製しました`;
+      selectMarker(duplicate.id, true);
+    }
+
+    function updateImagePreview() {
+      const marker = markers.find((item) => item.id === selectedId);
+      if (!marker?.imageDataUrl) {
+        ui.imagePreview.className = "image-preview empty";
+        ui.imagePreview.textContent = "画像なし";
+        ui.clearImage.disabled = true;
+        return;
+      }
+      ui.imagePreview.className = "image-preview";
+      ui.imagePreview.innerHTML = `
+        <img src="${escapeAttribute(marker.imageDataUrl)}" alt="">
+        <span>${escapeHtml(marker.imageName || "添付画像")}</span>
+      `;
+      ui.clearImage.disabled = false;
+    }
+
+    function readFileAsDataUrl(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result || ""));
+        reader.onerror = () => reject(reader.error);
+        reader.readAsDataURL(file);
+      });
+    }
+
+    async function makeImageDataUrl(file) {
+      const original = await readFileAsDataUrl(file);
+      if (file.type === "image/svg+xml") return original;
+      return new Promise((resolve) => {
+        const image = new Image();
+        image.onload = () => {
+          const maxEdge = 480;
+          const scale = Math.min(1, maxEdge / Math.max(image.width, image.height));
+          const width = Math.max(1, Math.round(image.width * scale));
+          const height = Math.max(1, Math.round(image.height * scale));
+          const previewCanvas = document.createElement("canvas");
+          previewCanvas.width = width;
+          previewCanvas.height = height;
+          const previewCtx = previewCanvas.getContext("2d");
+          previewCtx.fillStyle = "#181715";
+          previewCtx.fillRect(0, 0, width, height);
+          previewCtx.drawImage(image, 0, 0, width, height);
+          resolve(previewCanvas.toDataURL("image/jpeg", 0.84));
+        };
+        image.onerror = () => resolve(original);
+        image.src = original;
+      });
+    }
+
+    async function attachImageFile(file) {
+      if (!file) return;
+      if (selectedId == null) addMarker("メモ");
+      const marker = markers.find((item) => item.id === selectedId);
+      if (!marker) return;
+      marker.imageName = file.name;
+      marker.imageDataUrl = await makeImageDataUrl(file);
+      ui.status.textContent = `画像を追加しました: ${file.name}`;
+      updateImagePreview();
+      renderMarkers();
+    }
+
+    function clearSelectedImage() {
+      const marker = markers.find((item) => item.id === selectedId);
+      if (!marker) return;
+      delete marker.imageName;
+      delete marker.imageDataUrl;
+      ui.status.textContent = "画像を外しました";
+      updateImagePreview();
+      renderMarkers();
+    }
+
+    function deleteSelected() {
+      if (selectedId == null) return;
+      markers = markers.filter((item) => item.id !== selectedId);
+      selectedId = markers[0]?.id ?? null;
+      ui.status.textContent = "選択マーカーを削除しました";
+      if (selectedId != null) {
+        selectMarker(selectedId, true);
+      } else {
+        ui.markerTime.value = "";
+        ui.markerLabel.value = "";
+        ui.markerComment.value = "";
+        renderMarkers();
+      }
+    }
+
+    function nudgeSelected(delta) {
+      const marker = markers.find((item) => item.id === selectedId);
+      if (!marker) return;
+      marker.time = Math.max(0, marker.time + delta);
+      ui.status.textContent = `${delta > 0 ? "+" : ""}${Math.round(delta * 1000)}ms: ${formatTime(marker.time)}`;
+      selectMarker(marker.id, true);
+    }
+
+    function snapTime(time) {
+      const snap = Number(ui.snap.value);
+      if (!snap) return time;
+      const unit = beatDuration() * snap;
+      return beatOffsetSec() + Math.round((time - beatOffsetSec()) / unit) * unit;
+    }
+
+    function beatDuration() {
+      return 60 / (Number(ui.bpm.value) || 144);
+    }
+
+    function measureCount() {
+      return Math.max(1, Math.round(Number(ui.measure.value) || 4));
+    }
+
+    function beatOffsetSec() {
+      return Number(ui.beatOffset.value) || 0;
+    }
+
+    // 秒 -> 音楽的な位置。小節/拍は 1 始まり、offset は最寄りの拍からのズレ(ms)。
+    function musicalPosition(time) {
+      const beatDur = beatDuration();
+      const measure = measureCount();
+      const beatsFromStart = (time - beatOffsetSec()) / beatDur;
+      const bar = Math.floor(beatsFromStart / measure);
+      const beatInBar = beatsFromStart - bar * measure;
+      const nearestBeat = Math.round(beatsFromStart);
+      const offsetMs = (beatsFromStart - nearestBeat) * beatDur * 1000;
+      return {
+        beatsFromStart,
+        barLabel: bar + 1,
+        beatLabel: beatInBar + 1,
+        nearestBeat,
+        offsetMs,
+      };
+    }
+
+    function positionLabel(time) {
+      const pos = musicalPosition(time);
+      return `${pos.barLabel}:${pos.beatLabel.toFixed(2)}`;
+    }
+
+    function updateBeatReadout() {
+      const marker = markers.find((item) => item.id === selectedId);
+      const time = marker ? marker.time : Number(ui.markerTime.value);
+      if (!Number.isFinite(time)) {
+        ui.beatReadout.innerHTML = "小節:拍 —";
+        return;
+      }
+      const pos = musicalPosition(time);
+      const off = Math.round(pos.offsetMs);
+      const onGrid = Math.abs(off) <= 3;
+      const offText = onGrid
+        ? `<span class="on">拍ジャスト</span>`
+        : `<span class="off">拍から ${off > 0 ? "+" : ""}${off}ms</span>`;
+      ui.beatReadout.innerHTML = `小節:拍 <strong>${pos.barLabel}:${pos.beatLabel.toFixed(2)}</strong> ・ ${offText}`;
+    }
+
+    function snapSelected() {
+      const marker = markers.find((item) => item.id === selectedId);
+      if (!marker) return;
+      marker.time = Math.max(0, snapTime(marker.time));
+      ui.status.textContent = `拍へ吸着: ${formatTime(marker.time)}`;
+      selectMarker(marker.id, true);
+    }
+
+    function sortedMarkers() {
+      return markers.slice().sort((a, b) => a.time - b.time);
+    }
+
+    function trackName() {
+      return ui.trackName.value.trim();
+    }
+
+    function composerName() {
+      return ui.composer.value.trim();
+    }
+
+    function sanitizeSlug(value) {
+      return String(value || "").toLowerCase().replace(/[^a-z0-9-]/g, "");
+    }
+
+    function slugValue() {
+      return sanitizeSlug(ui.slug.value);
+    }
+
+    // ファイル名・保存キー用。slug 未入力時は "stage" をフォールバックに使う。
+    function fileSlug() {
+      return slugValue() || "stage";
+    }
+
+    function updateTitle() {
+      const name = trackName();
+      const title = name ? `${name} タイミング` : "タイミングエディタ";
+      document.title = title;
+      ui.appTitle.textContent = title;
+    }
+
+    function storageKeyFor(slug) {
+      return STORAGE_PREFIX + slug;
+    }
+
+    function storageGet(key) {
+      try {
+        return localStorage.getItem(key) || "";
+      } catch (error) {
+        return "";
+      }
+    }
+
+    // slug 単位で現在の状態(buildJson 相当)を localStorage に保存する。
+    function saveToStorage() {
+      const slug = slugValue();
+      if (!slug) return;
+      try {
+        localStorage.setItem(storageKeyFor(slug), buildJson());
+        localStorage.setItem(LAST_SLUG_KEY, slug);
+        currentStorageSlug = slug;
+        quotaWarned = false;
+      } catch (error) {
+        if (!quotaWarned) {
+          quotaWarned = true;
+          ui.status.textContent = "自動保存に失敗しました（保存容量の上限かもしれません）";
+        }
+      }
+    }
+
+    function scheduleAutoSave() {
+      if (autoSaveTimer) window.clearTimeout(autoSaveTimer);
+      autoSaveTimer = window.setTimeout(saveToStorage, 1000);
+    }
+
+    // ページ読み込み時に、前回使った slug の保存データを自動復元する。
+    function restoreLastSession() {
+      const lastSlug = storageGet(LAST_SLUG_KEY);
+      if (!lastSlug) return false;
+      const raw = storageGet(storageKeyFor(lastSlug));
+      if (!raw) return false;
+      if (applyImportedJson(raw, "保存データ")) {
+        currentStorageSlug = lastSlug;
+        ui.status.textContent = `前回のデータを復元しました（${lastSlug}）。音源は再度読み込んでください。`;
+        return true;
+      }
+      return false;
+    }
+
+    // 保存/往復用。画像は base64 も含めて完全な状態で残す。
+    function buildJson() {
+      const payload = {
+        track: trackName(),
+        composer: composerName(),
+        slug: slugValue(),
+        bpm: Number(ui.bpm.value) || 144,
+        measure: measureCount(),
+        beatOffset: beatOffsetSec(),
+        markers: sortedMarkers().map(({ time, label, comment, imageName, imageDataUrl }) => ({
+          time: Number(time.toFixed(3)),
+          timeLabel: formatTime(time),
+          position: positionLabel(time),
+          label,
+          comment,
+          image: imageDataUrl ? { name: imageName || "", dataUrl: imageDataUrl } : null,
+        })),
+      };
+      return JSON.stringify(payload, null, 2);
+    }
+
+    // Claude に渡す指示書。base64 は載せず、画像は名前で参照させる。
+    function buildMarkdown() {
+      const bpm = Number(ui.bpm.value) || 144;
+      const measure = measureCount();
+      const beatDur = beatDuration();
+      const list = sortedMarkers();
+      const total = duration || fullDuration();
+      const escapeCell = (value) => String(value || "").replace(/\|/g, "\\|").replace(/\r?\n/g, " ").trim();
+
+      const name = trackName() || "ステージ";
+      const composer = composerName();
+      const lines = [];
+      lines.push(`# ${name} 音ハメ指示書`);
+      lines.push("");
+      lines.push(`- 曲: ${name}${composer ? `（作曲: ${composer}）` : ""}`);
+      lines.push(`- BPM: ${bpm} / 拍子: ${measure}/4 / 拍オフセット: ${beatOffsetSec().toFixed(3)}s`);
+      lines.push(`- 1拍 = ${beatDur.toFixed(4)}s / 1小節 = ${(beatDur * measure).toFixed(4)}s`);
+      lines.push(`- マーカー数: ${list.length} / 音源長: ${formatTime(total)}`);
+      lines.push("");
+      lines.push("> 各行は音源上の演出タイミング。`秒` は Unity 側 BulletBuffer の発火/`appearTime` 基準に対応させる値。`小節:拍` は BPM グリッド上の位置（1始まり）。`間隔` は直前マーカーからの差（秒 / 拍数）。画像列に名前がある行は別途スクショを添付。");
+      lines.push("");
+      lines.push("## タイミング一覧");
+      lines.push("");
+      lines.push("| # | 時刻 | 秒 | 小節:拍 | 間隔(秒/拍) | ラベル | 画像 |");
+      lines.push("|---:|---|---:|---|---|---|---|");
+      let prev = null;
+      const imageRefs = [];
+      list.forEach((marker, index) => {
+        const num = index + 1;
+        const interval = prev == null
+          ? "—"
+          : `+${(marker.time - prev.time).toFixed(3)} / ${((marker.time - prev.time) / beatDur).toFixed(2)}拍`;
+        let imageCell = "—";
+        if (marker.imageDataUrl) {
+          const name = marker.imageName || `image_${num}`;
+          imageRefs.push({ num, name });
+          imageCell = name;
+        }
+        lines.push(`| ${num} | ${formatTime(marker.time)} | ${marker.time.toFixed(3)} | ${positionLabel(marker.time)} | ${interval} | ${escapeCell(marker.label) || "—"} | ${imageCell} |`);
+        prev = marker;
+      });
+
+      const detailed = list.filter((marker) => (marker.comment || "").trim() || marker.imageDataUrl);
+      if (detailed.length) {
+        lines.push("");
+        lines.push("## 指示（詳細）");
+        prev = null;
+        list.forEach((marker, index) => {
+          const comment = (marker.comment || "").trim();
+          if (!comment && !marker.imageDataUrl) return;
+          const num = index + 1;
+          lines.push("");
+          lines.push(`### ${num}. ${formatTime(marker.time)} ・ ${positionLabel(marker.time)} ・ ${marker.label || "（無題）"}`);
+          if (marker.imageDataUrl) {
+            lines.push(`- 画像: ${marker.imageName || `image_${num}`}（別途添付）`);
+          }
+          if (comment) {
+            lines.push(comment);
+          }
+        });
+      }
+
+      if (imageRefs.length) {
+        lines.push("");
+        lines.push("## 添付画像");
+        lines.push("");
+        imageRefs.forEach(({ num, name }) => lines.push(`- ${name} … マーカー #${num}`));
+        lines.push("");
+        lines.push("※ base64 は含めていません。上記の名前のスクショをこのチャットに添付してください。");
+      }
+
+      lines.push("");
+      return lines.join("\n");
+    }
+
+    function updateExport() {
+      if (exportDirty && document.activeElement === ui.exportText) return;
+      ui.exportText.value = exportFormat === "json" ? buildJson() : buildMarkdown();
+      exportDirty = false;
+    }
+
+    function setExportFormat(format) {
+      exportFormat = format === "json" ? "json" : "markdown";
+      ui.formatMarkdown.classList.toggle("active", exportFormat === "markdown");
+      ui.formatJson.classList.toggle("active", exportFormat === "json");
+      ui.formatMarkdown.setAttribute("aria-selected", String(exportFormat === "markdown"));
+      ui.formatJson.setAttribute("aria-selected", String(exportFormat === "json"));
+      ui.exportText.spellcheck = false;
+      setButtonIcon(ui.downloadJson, "download", exportFormat === "json" ? "JSON保存" : "MD保存");
+      ui.copyJson.title = exportFormat === "json" ? "JSONをコピー" : "Claude向け指示書をコピー";
+      ui.downloadJson.title = exportFormat === "json" ? "JSONファイルを保存" : "Markdownファイルを保存";
+      exportDirty = false;
+      updateExport();
+    }
+
+    function download(name, content, type) {
+      const blob = new Blob([content], { type });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = name;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    async function loadAudioFromUrl(url, name) {
+      ui.status.textContent = "音源を読み込み中";
+      const response = await fetch(url);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const blob = await response.blob();
+      await loadAudioBlob(blob, name);
+    }
+
+    async function loadAudioBlob(blob, name) {
+      if (audioObjectUrl) URL.revokeObjectURL(audioObjectUrl);
+      const lowerName = String(name || "").toLowerCase();
+      const playableBlob = blob.type
+        ? blob
+        : new Blob([blob], { type: lowerName.endsWith(".m4a") ? "audio/mp4" : "audio/mpeg" });
+      const objectUrl = URL.createObjectURL(playableBlob);
+      audioObjectUrl = objectUrl;
+      const applyMetadata = () => {
+        duration = audio.duration || duration;
+        viewCenter = clampViewCenter(audio.currentTime || 0);
+        ui.seek.max = duration || 0;
+        ui.duration.textContent = formatTime(duration || 0);
+        ui.status.textContent = `${name} / ${formatTime(duration || 0)}`;
+        requestDraw();
+      };
+      audio.src = objectUrl;
+      audio.load();
+      ui.fileName.textContent = name;
+      audio.addEventListener("loadedmetadata", applyMetadata, { once: true });
+      window.setTimeout(() => {
+        playableBlob.arrayBuffer()
+          .then(decodeWaveform)
+          .catch(() => {
+            peaks = [];
+            resetWaveformCache();
+            requestDraw();
+          });
+      }, 40);
+      if (audio.readyState >= 1) applyMetadata();
+    }
+
+    async function decodeWaveform(buffer) {
+      audioContext ||= new AudioContext();
+      const decoded = await audioContext.decodeAudioData(buffer.slice(0));
+      duration = decoded.duration;
+      const data = decoded.getChannelData(0);
+      const target = 2400;
+      const block = Math.max(1, Math.floor(data.length / target));
+      peaks = [];
+      for (let i = 0; i < data.length; i += block) {
+        let peak = 0;
+        for (let j = 0; j < block && i + j < data.length; j += 1) {
+          peak = Math.max(peak, Math.abs(data[i + j]));
+        }
+        peaks.push(peak);
+      }
+      rebuildWaveformCache();
+      requestDraw();
+    }
+
+    async function ensureAudioLoaded() {
+      if (audio.src) return true;
+      try {
+        await loadAudioFromUrl("../../Assets/StageData/stone/stone.m4a", "stone.m4a");
+        return true;
+      } catch (error) {
+        ui.status.textContent = `標準音源を読み込めません: ${error.message || error.name || "unknown"}`;
+        return false;
+      }
+    }
+
+    function syncTransport() {
+      const time = audio.currentTime || 0;
+      if (followPlayhead) viewCenter = clampViewCenter(time);
+      const label = formatTime(time);
+      if (label !== lastTimeLabel) {
+        ui.timeReadout.textContent = label;
+        ui.currentTime.textContent = label;
+        lastTimeLabel = label;
+      }
+      const seekValue = time.toFixed(3);
+      if (seekValue !== lastSeekValue) {
+        ui.seek.value = seekValue;
+        lastSeekValue = seekValue;
+      }
+      setButtonIcon(ui.play, audio.paused ? "play" : "pause", audio.paused ? "再生" : "停止");
+      requestDraw();
+    }
+
+    function playbackTick(frameTime = 0) {
+      playbackFrameId = 0;
+      if (frameTime - lastPlaybackFrameAt >= 32) {
+        lastPlaybackFrameAt = frameTime;
+        syncTransport();
+      }
+      if (!audio.paused) startPlaybackLoop();
+    }
+
+    function startPlaybackLoop() {
+      if (playbackFrameId) return;
+      playbackFrameId = requestAnimationFrame(playbackTick);
+    }
+
+    function stopPlaybackLoop() {
+      if (playbackFrameId) {
+        cancelAnimationFrame(playbackFrameId);
+        playbackFrameId = 0;
+      }
+      syncTransport();
+    }
+
+    function updateTransport() {
+      syncTransport();
+    }
+
+    function applyImportedJson(text, sourceLabel = "JSON") {
+      try {
+        const payload = JSON.parse(text);
+        if (!Array.isArray(payload.markers)) throw new Error("markers missing");
+        markers = payload.markers.map((marker) => ({
+          id: idSeed++,
+          time: Number(marker.time) || 0,
+          label: marker.label || "",
+          comment: marker.comment || "",
+          imageName: marker.image?.name || marker.imageName || "",
+          imageDataUrl: marker.image?.dataUrl || marker.imageDataUrl || "",
+        }));
+        if (payload.bpm != null) ui.bpm.value = Number(payload.bpm) || 144;
+        if (payload.measure != null) ui.measure.value = Math.max(1, Math.round(Number(payload.measure) || 4));
+        if (payload.beatOffset != null) ui.beatOffset.value = Number(payload.beatOffset) || 0;
+        if (payload.track != null) ui.trackName.value = String(payload.track);
+        if (payload.composer != null) ui.composer.value = String(payload.composer);
+        // 後方互換: 旧 JSON に slug が無ければ現状のまま。
+        if (payload.slug != null) ui.slug.value = sanitizeSlug(payload.slug);
+        updateTitle();
+        selectedId = markers[0]?.id ?? null;
+        exportDirty = false;
+        if (selectedId != null) selectMarker(selectedId);
+        renderMarkers();
+        ui.status.textContent = `${sourceLabel}を読み込みました（${markers.length}件）`;
+        return true;
+      } catch (error) {
+        ui.status.textContent = `JSONを読み込めません: ${error.message || "不正な形式"}`;
+        return false;
+      }
+    }
+
+    // 読込ボタン: テキストエリアに貼り付けた JSON があればそれを、無ければファイル選択を開く。
+    function importMarkersFromText() {
+      const raw = ui.exportText.value.trim();
+      if (exportDirty && raw.startsWith("{")) {
+        applyImportedJson(raw, "貼り付けJSON");
+        return;
+      }
+      ui.jsonInput.click();
+    }
+
+    ui.loadBundled.addEventListener("click", async () => {
+      try {
+        await loadAudioFromUrl("../../Assets/StageData/stone/stone.m4a", "stone.m4a");
+      } catch (error) {
+        ui.status.textContent = "自動読み込み失敗。音源を選択してください";
+      }
+    });
+
+    ui.chooseAudio.addEventListener("click", () => ui.audioInput.click());
+    ui.audioInput.addEventListener("change", async () => {
+      const file = ui.audioInput.files?.[0];
+      if (!file) return;
+      await loadAudioBlob(file, file.name);
+    });
+
+    ui.attachImage.addEventListener("click", () => ui.markerImageInput.click());
+    ui.clearImage.addEventListener("click", clearSelectedImage);
+    ui.markerImageInput.addEventListener("change", async () => {
+      const file = ui.markerImageInput.files?.[0];
+      ui.markerImageInput.value = "";
+      await attachImageFile(file);
+    });
+
+    ui.markerStrip.addEventListener("click", (event) => {
+      const row = event.target.closest(".marker-row");
+      if (!row) return;
+      selectMarker(Number(row.dataset.id));
+    });
+
+    ui.markerStrip.addEventListener("dblclick", (event) => {
+      const row = event.target.closest(".marker-row");
+      if (!row) return;
+      const marker = markers.find((item) => item.id === Number(row.dataset.id));
+      if (!marker) return;
+      audio.currentTime = marker.time;
+      centerTimelineOn(marker.time, false);
+      updateTransport();
+    });
+
+    ui.play.addEventListener("click", async () => {
+      if (!audio.src) {
+        if (await ensureAudioLoaded()) {
+          ui.status.textContent = "音源を読み込みました。もう一度再生を押してください";
+        }
+        return;
+      }
+      if (audio.paused) {
+        try {
+          if (audioContext?.state === "suspended") audioContext.resume().catch(() => {});
+          audio.muted = false;
+          audio.volume = 1;
+          followPlayhead = true;
+          ui.status.textContent = "再生開始中";
+          await Promise.race([
+            audio.play(),
+            new Promise((_, reject) => window.setTimeout(() => reject(new Error("再生開始がタイムアウトしました")), 1200)),
+          ]);
+          ui.status.textContent = `${ui.fileName.textContent} / 再生中`;
+          startPlaybackLoop();
+        } catch (error) {
+          ui.status.textContent = `再生できません: ${error.message || error.name || "unknown"}`;
+        }
+      } else {
+        audio.pause();
+        stopPlaybackLoop();
+      }
+    });
+
+    ui.seek.addEventListener("input", () => {
+      followPlayhead = true;
+      setAudioTime(Number(ui.seek.value) || 0, true);
+    });
+
+    ui.jumpBack.addEventListener("click", () => {
+      followPlayhead = true;
+      setAudioTime((audio.currentTime || 0) - 1, true);
+    });
+
+    ui.jumpForward.addEventListener("click", () => {
+      followPlayhead = true;
+      setAudioTime((audio.currentTime || 0) + 1, true);
+    });
+
+    ui.addMarker.addEventListener("click", () => addMarker());
+    ui.updateMarker.addEventListener("click", updateSelected);
+    ui.timeFromPlayhead.addEventListener("click", setSelectedToPlayhead);
+    ui.seekSelected.addEventListener("click", seekToSelected);
+    ui.deleteMarker.addEventListener("click", deleteSelected);
+    ui.nudgeBackLarge.addEventListener("click", () => nudgeSelected(-0.05));
+    ui.nudgeBack.addEventListener("click", () => nudgeSelected(-0.01));
+    ui.nudgeForward.addEventListener("click", () => nudgeSelected(0.01));
+    ui.nudgeForwardLarge.addEventListener("click", () => nudgeSelected(0.05));
+    ui.snapMarker.addEventListener("click", snapSelected);
+    ui.duplicateMarker.addEventListener("click", duplicateSelected);
+
+    [ui.markerTime, ui.markerLabel, ui.markerComment].forEach((control) => {
+      control.addEventListener("input", autoUpdateSelected);
+      control.addEventListener("change", autoUpdateSelected);
+    });
+
+    ui.exportText.addEventListener("input", () => {
+      exportDirty = true;
+    });
+
+    ui.formatMarkdown.addEventListener("click", () => setExportFormat("markdown"));
+    ui.formatJson.addEventListener("click", () => setExportFormat("json"));
+
+    ui.copyJson.addEventListener("click", async () => {
+      updateExport();
+      await navigator.clipboard.writeText(ui.exportText.value);
+      ui.status.textContent = exportFormat === "json" ? "JSONをコピーしました" : "Claude向け指示書をコピーしました";
+    });
+
+    ui.downloadJson.addEventListener("click", () => {
+      updateExport();
+      const slug = fileSlug();
+      if (exportFormat === "json") {
+        download(`${slug}-timing-markers.json`, ui.exportText.value, "application/json");
+      } else {
+        download(`${slug}-timing-instructions.md`, ui.exportText.value, "text/markdown");
+      }
+    });
+
+    ui.importJson.addEventListener("click", importMarkersFromText);
+    ui.jsonInput.addEventListener("change", async () => {
+      const file = ui.jsonInput.files?.[0];
+      ui.jsonInput.value = "";
+      if (!file) return;
+      try {
+        const text = await file.text();
+        applyImportedJson(text, file.name);
+      } catch (error) {
+        ui.status.textContent = "ファイルを読み込めません";
+      }
+    });
+
+    ui.bpm.addEventListener("input", () => {
+      updateExport();
+      updateBeatReadout();
+      requestDraw();
+      scheduleAutoSave();
+    });
+    ui.measure.addEventListener("input", () => {
+      updateExport();
+      updateBeatReadout();
+      requestDraw();
+      scheduleAutoSave();
+    });
+    ui.beatOffset.addEventListener("input", () => {
+      updateExport();
+      updateBeatReadout();
+      requestDraw();
+      scheduleAutoSave();
+    });
+
+    [ui.trackName, ui.composer].forEach((control) => {
+      control.addEventListener("input", () => {
+        updateTitle();
+        updateExport();
+        scheduleAutoSave();
+      });
+    });
+
+    // slug 入力: 半角英数とハイフンのみに整形。打鍵ごとの保存はしない。
+    ui.slug.addEventListener("input", () => {
+      const clean = sanitizeSlug(ui.slug.value);
+      if (ui.slug.value !== clean) ui.slug.value = clean;
+      updateExport();
+    });
+
+    // slug 確定時: 同じ slug の保存データがあれば読み込むか確認。無ければ現内容を新 slug で保存継続。
+    ui.slug.addEventListener("change", () => {
+      const slug = slugValue();
+      if (ui.slug.value !== slug) ui.slug.value = slug;
+      if (!slug) return;
+      const raw = storageGet(storageKeyFor(slug));
+      if (raw && slug !== currentStorageSlug) {
+        if (window.confirm(`スラッグ「${slug}」の保存データがあります。読み込みますか？\n（現在の編集内容は破棄されます）`)) {
+          if (applyImportedJson(raw, "保存データ")) {
+            currentStorageSlug = slug;
+            ui.status.textContent = `「${slug}」の保存データを読み込みました`;
+            return;
+          }
+        }
+      }
+      currentStorageSlug = slug;
+      saveToStorage();
+    });
+    ui.zoom.addEventListener("input", () => requestDraw());
+    ui.snap.addEventListener("change", () => requestDraw());
+    ui.playbackRate.addEventListener("change", () => {
+      audio.playbackRate = Number(ui.playbackRate.value) || 1;
+    });
+    audio.addEventListener("timeupdate", () => {
+      if (audio.paused) updateTransport();
+    });
+    audio.addEventListener("play", startPlaybackLoop);
+    audio.addEventListener("pause", stopPlaybackLoop);
+    audio.addEventListener("error", () => {
+      const code = audio.error?.code ? ` code ${audio.error.code}` : "";
+      ui.status.textContent = `音声を再生できません${code}`;
+    });
+    window.addEventListener("resize", () => requestDraw());
+
+    ui.timelineWrap.addEventListener("click", (event) => {
+      if (suppressTimelineClick) {
+        suppressTimelineClick = false;
+        return;
+      }
+      const rect = canvas.getBoundingClientRect();
+      const next = Math.max(0, Math.min(duration || Infinity, xToTime(event.clientX - rect.left, rect, visibleWindow())));
+      if (event.shiftKey) {
+        addMarker("メモ", next);
+      } else {
+        followPlayhead = true;
+        setAudioTime(next, true);
+      }
+    });
+
+    ui.timelineWrap.addEventListener("pointerdown", (event) => {
+      if (event.button !== 0 || event.shiftKey) return;
+      const rect = canvas.getBoundingClientRect();
+      const windowInfo = visibleWindow();
+      timelineDragRect = rect;
+      const hitMarker = markerAtPointer(event, rect, windowInfo);
+      if (hitMarker) {
+        isMarkerDragging = true;
+        draggedMarkerId = hitMarker.id;
+        markerDragMoved = false;
+        suppressTimelineClick = true;
+        followPlayhead = false;
+        selectMarker(hitMarker.id);
+        ui.timelineWrap.classList.add("is-scrubbing");
+        ui.timelineWrap.setPointerCapture?.(event.pointerId);
+        return;
+      }
+      if (isNearPlayhead(event, rect, windowInfo)) {
+        isPlayheadDragging = true;
+        suppressTimelineClick = true;
+        followPlayhead = false;
+        ui.timelineWrap.classList.add("is-scrubbing");
+        ui.timelineWrap.setPointerCapture?.(event.pointerId);
+        setAudioTime(xToTime(event.clientX - rect.left, rect, windowInfo));
+        return;
+      }
+      isTimelinePanning = true;
+      suppressTimelineClick = false;
+      panStartX = event.clientX;
+      panStartCenter = followPlayhead ? (audio.currentTime || 0) : viewCenter;
+      panStartWindowDuration = windowInfo.windowDuration;
+      followPlayhead = false;
+      ui.timelineWrap.classList.add("is-panning");
+      ui.timelineWrap.setPointerCapture?.(event.pointerId);
+    });
+
+    ui.timelineWrap.addEventListener("pointermove", (event) => {
+      if (isPlayheadDragging) {
+        suppressTimelineClick = true;
+        setAudioTime(timelinePointerTime(event, timelineDragRect || canvas.getBoundingClientRect()));
+        return;
+      }
+      if (isMarkerDragging) {
+        const marker = markers.find((item) => item.id === draggedMarkerId);
+        if (!marker) return;
+        const rect = timelineDragRect || canvas.getBoundingClientRect();
+        const limit = duration || fullDuration();
+        const next = clamp(snapTime(xToTime(event.clientX - rect.left, rect, visibleWindow())), 0, limit);
+        marker.time = next;
+        markerDragMoved = true;
+        suppressTimelineClick = true;
+        ui.markerTime.value = next.toFixed(3);
+        updateBeatReadout();
+        ui.status.textContent = `${marker.label || "メモ"} → ${formatTime(next)}`;
+        requestDraw();
+        return;
+      }
+      if (!isTimelinePanning) {
+        const rect = canvas.getBoundingClientRect();
+        const overMarker = !!markerAtPointer(event, rect, visibleWindow());
+        ui.timelineWrap.classList.toggle("is-marker-hover", overMarker);
+        return;
+      }
+      const rect = timelineDragRect || canvas.getBoundingClientRect();
+      if (!rect.width) return;
+      const deltaX = event.clientX - panStartX;
+      if (Math.abs(deltaX) > 3) suppressTimelineClick = true;
+      viewCenter = clampViewCenter(panStartCenter - (deltaX / rect.width) * panStartWindowDuration);
+      requestDraw();
+    });
+
+    function stopTimelinePan(event) {
+      if (isMarkerDragging) {
+        isMarkerDragging = false;
+        const id = draggedMarkerId;
+        const moved = markerDragMoved;
+        draggedMarkerId = null;
+        timelineDragRect = null;
+        ui.timelineWrap.classList.remove("is-scrubbing");
+        if (event?.pointerId != null) ui.timelineWrap.releasePointerCapture?.(event.pointerId);
+        const marker = markers.find((item) => item.id === id);
+        if (moved && marker) {
+          ui.status.textContent = `${marker.label || "メモ"} を ${formatTime(marker.time)} へ移動しました`;
+        }
+        selectMarker(id, true);
+        window.setTimeout(() => {
+          suppressTimelineClick = false;
+        }, 80);
+        return;
+      }
+      if (isPlayheadDragging) {
+        isPlayheadDragging = false;
+        timelineDragRect = null;
+        ui.timelineWrap.classList.remove("is-scrubbing");
+        if (event?.pointerId != null) ui.timelineWrap.releasePointerCapture?.(event.pointerId);
+        window.setTimeout(() => {
+          suppressTimelineClick = false;
+        }, 80);
+        return;
+      }
+      if (!isTimelinePanning) return;
+      isTimelinePanning = false;
+      timelineDragRect = null;
+      ui.timelineWrap.classList.remove("is-panning");
+      if (event?.pointerId != null) ui.timelineWrap.releasePointerCapture?.(event.pointerId);
+      window.setTimeout(() => {
+        suppressTimelineClick = false;
+      }, 80);
+    }
+
+    ui.timelineWrap.addEventListener("pointerup", stopTimelinePan);
+    ui.timelineWrap.addEventListener("pointercancel", stopTimelinePan);
+    ui.timelineWrap.addEventListener("lostpointercapture", stopTimelinePan);
+
+    ui.timelineWrap.addEventListener("wheel", (event) => {
+      event.preventDefault();
+      const rect = canvas.getBoundingClientRect();
+      const windowInfo = visibleWindow();
+      const pointerTime = xToTime(event.clientX - rect.left, rect, windowInfo);
+
+      if (event.ctrlKey || event.metaKey) {
+        const currentZoom = Math.max(0.25, Number(ui.zoom.value) || 1);
+        const scale = event.deltaY > 0 ? 0.88 : 1.14;
+        const nextZoom = clamp(currentZoom * scale, 0.25, 12);
+        const pointerRatio = clamp((event.clientX - rect.left) / Math.max(1, rect.width), 0, 1);
+        setTimelineZoom(nextZoom, pointerTime, pointerRatio);
+        return;
+      }
+
+      const dominantDelta = Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : event.deltaY;
+      const speed = event.shiftKey ? 360 : 720;
+      const panSeconds = (dominantDelta / speed) * windowInfo.windowDuration;
+      followPlayhead = false;
+      viewCenter = clampViewCenter(viewCenter + panSeconds);
+      requestDraw();
+    }, { passive: false });
+
+    ["dragenter", "dragover"].forEach((name) => {
+      ui.app.addEventListener(name, (event) => {
+        event.preventDefault();
+        ui.timelineWrap.classList.add("drag-over");
+      });
+    });
+
+    ["dragleave", "drop"].forEach((name) => {
+      ui.app.addEventListener(name, (event) => {
+        event.preventDefault();
+        ui.timelineWrap.classList.remove("drag-over");
+      });
+    });
+
+    ui.app.addEventListener("drop", async (event) => {
+      const file = [...event.dataTransfer.files].find((item) => item.type.startsWith("audio/"));
+      if (!file) {
+        ui.status.textContent = "音声ファイルをドロップしてください";
+        return;
+      }
+      await loadAudioBlob(file, file.name);
+    });
+
+    window.addEventListener("keydown", async (event) => {
+      const tag = document.activeElement?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+      if (event.code === "Space") {
+        event.preventDefault();
+        ui.play.click();
+      }
+      if (event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        addMarker("メモ");
+        ui.markerComment.focus();
+      }
+      if (event.key.toLowerCase() === "i") ui.markerImageInput.click();
+      if ((event.key === "Delete" || event.key === "Backspace") && selectedId != null) {
+        event.preventDefault();
+        deleteSelected();
+      }
+      if (event.key === "[") nudgeSelected(-0.01);
+      if (event.key === "]") nudgeSelected(0.01);
+      if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
+        event.preventDefault();
+        const direction = event.key === "ArrowRight" ? 1 : -1;
+        const amount = visibleWindow().windowDuration * (event.shiftKey ? 0.18 : 0.06);
+        followPlayhead = false;
+        viewCenter = clampViewCenter(viewCenter + direction * amount);
+        requestDraw();
+      }
+      if (event.key === "+" || event.key === "=" || event.key === "-") {
+        event.preventDefault();
+        const currentZoom = Math.max(0.25, Number(ui.zoom.value) || 1);
+        setTimelineZoom(event.key === "-" ? currentZoom * 0.88 : currentZoom * 1.14);
+      }
+    });
+
+    decorateIcons();
+    setExportFormat(exportFormat);
+    updateTitle();
+    restoreLastSession();
+    renderMarkers();
+    if (markers.length) selectMarker(markers[0].id);
+    updateTransport();
+    window.setTimeout(() => {
+      if (!audio.src) ensureAudioLoaded();
+    }, 80);
+  </script>
+</body>
+</html>
