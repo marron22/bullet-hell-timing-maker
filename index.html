@@ -2152,6 +2152,9 @@
 
     function startTour() {
       closeHelp();
+      // ツアーが一度でも始まったら初回導線は済んだ扱いにする。
+      // 途中で中断しても、次回訪問時にツアーやモーダルを自動表示しない。
+      storageSet(HELP_SEEN_KEY, "1");
       if (!tourHasProgress) {
         tourFlags.played = false;
         tourFlags.nudged = false;
@@ -2996,8 +2999,10 @@
     if (markers.length) selectMarker(markers[0].id);
     updateFollowButton();
     updateTransport();
-    // 初回訪問（復元データも閲覧履歴もない）時だけ、使い方モーダルを自動表示する。
-    if (!restoredSession && !storageGet(HELP_SEEN_KEY)) openHelp();
+    // 初回訪問（復元データも閲覧履歴もない）時だけ、モーダルを経ずにガイドツアーを自動開始する。
+    // startTour() が helpSeen を立てるため、中断・完了に関わらず2回目以降は自動表示しない
+    // （使い方モーダルは従来どおり ? キー / ヘルプボタンから開ける）。
+    if (!restoredSession && !storageGet(HELP_SEEN_KEY)) startTour();
     window.setTimeout(() => {
       if (!audio.src) ensureAudioLoaded();
     }, 80);

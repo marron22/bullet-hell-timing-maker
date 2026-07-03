@@ -73,28 +73,33 @@ try {
   check("AI指示プレビュー(textarea)が存在しない", removed.exportText);
   check("buildChartTemplate が存在しない", removed.chartFn);
 
-  // ---- 3) 初回訪問: 使い方モーダルが自動表示される ----
-  const helpVisibleFirstRun = await page.isVisible("#helpModal .modal");
-  check("初回訪問で使い方モーダルが自動表示", helpVisibleFirstRun);
-  await page.screenshot({ path: path.join(imagesDir, "screenshot-help.png") });
+  // ---- 3) 初回訪問: モーダルを経ずにガイドツアーが自動開始される ----
+  const tourStep = () => page.evaluate(() => document.getElementById("tourCount").textContent);
+  check("初回訪問でガイドツアーが自動開始", await page.isVisible("#tourBalloon"));
+  check("初回訪問で使い方モーダルは自動表示されない", !(await page.isVisible("#helpModal .modal")));
+  check("自動開始はステップ1（音源読み込み）から", (await tourStep()).startsWith("ステップ 1"));
+  await page.screenshot({ path: path.join(imagesDir, "screenshot-tour.png") });
 
-  // ---- 4) Esc で閉じ、? で再度開く ----
+  // ---- 4) Esc で中断 → 再読込しても自動再表示されない（初回導線は済んだ扱い） ----
   await page.keyboard.press("Escape");
   await page.waitForTimeout(150);
-  check("Esc でモーダルが閉じる", !(await page.isVisible("#helpModal .modal")));
+  check("Esc で自動開始ツアーを中断できる", !(await page.isVisible("#tourBalloon")));
+  await page.reload();
+  await page.waitForTimeout(400);
+  check("中断後の再訪問でツアーが自動再表示されない", !(await page.isVisible("#tourBalloon")));
+  check("中断後の再訪問でモーダルも自動表示されない", !(await page.isVisible("#helpModal .modal")));
   await page.screenshot({ path: path.join(imagesDir, "screenshot-empty.png") });
+
+  // ---- 5) ? でモーダルを開き、「ガイドツアーで始める」で手動開始 ----
   await page.keyboard.press("?");
   await page.waitForTimeout(150);
   check("? キーでモーダルが開く", await page.isVisible("#helpModal .modal"));
-
-  // ---- 5) ガイドツアー開始（モーダルの「ガイドツアーで始める」） ----
-  const tourStep = () => page.evaluate(() => document.getElementById("tourCount").textContent);
+  await page.screenshot({ path: path.join(imagesDir, "screenshot-help.png") });
   await page.click("#helpTour");
   await page.waitForTimeout(200);
   check("ツアー開始でモーダルが閉じる", !(await page.isVisible("#helpModal .modal")));
   check("ツアーの吹き出しが表示される", await page.isVisible("#tourBalloon"));
   check("ステップ1（音源読み込み）から始まる", (await tourStep()).startsWith("ステップ 1"));
-  await page.screenshot({ path: path.join(imagesDir, "screenshot-tour.png") });
 
   // ---- 6) デモ音源読み込み → ステップ2 へ自動前進 ----
   await page.click("#demoAudio");
@@ -181,10 +186,11 @@ try {
   // ---- 12) 右パネル（編集 + 書き出し）の部分スクリーンショット ----
   await page.locator(".side").screenshot({ path: path.join(imagesDir, "screenshot-side.png") });
 
-  // ---- 13) 2回目の訪問ではモーダルが出ない（自動保存の復元が優先） ----
+  // ---- 13) 2回目の訪問ではモーダル・ツアーとも自動表示されない（自動保存の復元が優先） ----
   await page.reload();
   await page.waitForTimeout(500);
   check("再訪問時はモーダル非表示", !(await page.isVisible("#helpModal .modal")));
+  check("再訪問時はツアーも自動開始しない", !(await page.isVisible("#tourBalloon")));
 
   await context.close();
 } finally {
