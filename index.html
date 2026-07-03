@@ -652,7 +652,8 @@
 
     .export-panel {
       display: grid;
-      grid-template-rows: auto minmax(0, 1fr);
+      grid-template-rows: auto auto;
+      align-content: start;
       min-height: 0;
       padding: 16px 18px 18px;
       gap: 10px;
@@ -704,30 +705,6 @@
 
     .beat-readout .on {
       color: var(--success);
-    }
-
-    .json-box {
-      min-height: 0;
-      overflow: hidden;
-      border: 1px solid var(--hairline);
-      border-radius: var(--radius-lg);
-      background: var(--surface-dark);
-      box-shadow: var(--shadow-soft);
-    }
-
-    .json-box textarea {
-      height: 100%;
-      min-height: 180px;
-      border: 0;
-      border-radius: 0;
-      background: transparent;
-      color: var(--on-dark);
-      caret-color: var(--primary);
-      font: 12px/1.55 "JetBrains Mono", "Cascadia Mono", Consolas, monospace;
-    }
-
-    .json-box textarea:focus {
-      box-shadow: none;
     }
 
     .footer {
@@ -790,6 +767,148 @@
       line-height: 1.6;
     }
 
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 40;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background: rgba(13, 12, 11, 0.66);
+      backdrop-filter: blur(2px);
+    }
+
+    .modal-backdrop.hidden {
+      display: none;
+    }
+
+    .modal {
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr) auto;
+      width: min(760px, 100%);
+      max-height: min(88vh, 800px);
+      overflow: hidden;
+      border: 1px solid var(--hairline);
+      border-radius: var(--radius-xl);
+      background: var(--surface-card);
+      box-shadow: var(--shadow-soft);
+    }
+
+    .modal-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 20px 24px 14px;
+      border-bottom: 1px solid var(--hairline-soft);
+    }
+
+    .modal-head h2 {
+      margin: 0;
+      font-family: "Times New Roman", "Yu Mincho", serif;
+      font-size: 26px;
+      font-weight: 400;
+      line-height: 1.15;
+    }
+
+    .modal-sub {
+      margin: 6px 0 0;
+      color: var(--muted);
+      font-size: 12.5px;
+      line-height: 1.55;
+    }
+
+    .modal-body {
+      display: grid;
+      gap: 20px;
+      min-height: 0;
+      overflow: auto;
+      padding: 18px 24px;
+    }
+
+    .steps {
+      display: grid;
+      gap: 12px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      counter-reset: step;
+    }
+
+    .steps li {
+      position: relative;
+      padding-left: 40px;
+      color: var(--body);
+      font-size: 13px;
+      line-height: 1.6;
+      counter-increment: step;
+    }
+
+    .steps li::before {
+      content: counter(step);
+      position: absolute;
+      left: 0;
+      top: 1px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 26px;
+      height: 26px;
+      border-radius: 999px;
+      background: var(--primary);
+      color: var(--on-primary);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .steps li strong {
+      color: var(--ink);
+    }
+
+    .help-section h3 {
+      margin: 0 0 8px;
+      color: var(--ink);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .help-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12.5px;
+    }
+
+    .help-table td {
+      padding: 6px 8px;
+      border-bottom: 1px solid var(--hairline-soft);
+      color: var(--body);
+      line-height: 1.5;
+    }
+
+    .help-table td:first-child {
+      width: 170px;
+      white-space: nowrap;
+      color: var(--ink);
+    }
+
+    .modal-actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 8px;
+      padding: 14px 24px 20px;
+      border-top: 1px solid var(--hairline-soft);
+    }
+
+    .modal-actions .modal-hint {
+      align-self: center;
+      margin-right: auto;
+      color: var(--muted);
+      font-size: 11.5px;
+      line-height: 1.4;
+    }
+
     @media (max-width: 1080px) {
       body {
         overflow: auto;
@@ -841,6 +960,71 @@
       }
     }
 
+    /* ガイドツアー: 対象ボタンをスポットライトで囲み、吹き出しで次の操作を案内する */
+    .tour-highlight {
+      position: fixed;
+      z-index: 60;
+      border: 2px solid var(--primary);
+      border-radius: 12px;
+      box-shadow: 0 0 0 4000px rgba(9, 12, 16, 0.55), 0 0 18px rgba(0, 0, 0, 0.35);
+      pointer-events: none;
+      transition: top 0.22s ease, left 0.22s ease, width 0.22s ease, height 0.22s ease;
+    }
+
+    .tour-balloon {
+      position: fixed;
+      z-index: 61;
+      display: grid;
+      gap: 8px;
+      width: min(340px, calc(100vw - 24px));
+      padding: 14px 16px;
+      border: 1px solid var(--hairline);
+      border-radius: var(--radius-lg);
+      background: var(--surface-card);
+      box-shadow: var(--shadow-soft);
+    }
+
+    .tour-balloon .tour-count {
+      color: var(--primary);
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .tour-balloon h3 {
+      margin: 0;
+      font-size: 14px;
+    }
+
+    .tour-balloon p {
+      margin: 0;
+      color: var(--body);
+      font-size: 12px;
+      line-height: 1.65;
+    }
+
+    .tour-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .tour-actions .tour-hint {
+      margin-right: auto;
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .tour-actions button {
+      min-height: 28px;
+      padding: 0 12px;
+      font-size: 12px;
+    }
+
+    .tour-highlight.hidden,
+    .tour-balloon.hidden {
+      display: none;
+    }
+
     @media (max-width: 640px) {
       .timeline-toolbar,
       .editor-grid,
@@ -879,35 +1063,37 @@
         </div>
       </div>
       <div class="file-row">
-        <button id="chooseAudio" data-icon="folder-open">音源を選択</button>
+        <button id="chooseAudio" data-icon="folder-open" title="ローカルの音声ファイルを読み込みます（外部送信はされません）">音源を選択</button>
         <input id="audioInput" class="hidden-input" type="file" accept="audio/*">
+        <button id="demoAudio" class="ghost" data-icon="music" title="手元に音源がなくても試せる 144BPM のクリック音を生成して読み込みます">デモ音源</button>
         <span id="fileName" class="file-name">未読み込み</span>
       </div>
       <div class="top-actions">
-        <button id="importJson" data-icon="file-input">作業内容を読込</button>
+        <button id="importJson" data-icon="file-input" title="「作業内容を保存」で書き出した JSON を読み込んで編集を再開します">作業内容を読込</button>
         <input id="jsonInput" class="hidden-input" type="file" accept="application/json,.json,text/plain">
+        <button id="helpButton" data-icon="help-circle" title="基本の流れとキー操作の一覧（? キーでも開けます）">使い方</button>
       </div>
     </header>
 
     <main class="main">
       <section class="timeline-shell" aria-label="タイムライン">
         <div class="timeline-toolbar">
-          <label class="wide">曲名
+          <label class="wide" title="タイトル・書き出すファイル名・自動保存キーに使われます">曲名
             <input id="trackName" type="text" placeholder="例: 石工">
           </label>
-          <label class="wide">作曲者
+          <label class="wide" title="空欄なら指示書の「（作曲: …）」は省略されます">作曲者
             <input id="composer" type="text" placeholder="任意">
           </label>
-          <label>BPM
+          <label title="曲のテンポ。波形に重なる拍グリッドの基準になります">BPM
             <input id="bpm" type="number" value="144" min="1" step="0.001">
           </label>
-          <label>拍子
+          <label title="1小節の拍数（4 なら 4/4 拍子）">拍子
             <input id="measure" type="number" value="4" min="1" max="16" step="1">
           </label>
-          <label>拍オフセット
+          <label title="最初の拍が鳴る秒数。小節頭が波形とずれるときに調整します">拍オフセット
             <input id="beatOffset" type="number" value="0" step="0.001">
           </label>
-          <label>スナップ
+          <label title="マーカーを置くとき拍グリッドへ吸着させる単位">スナップ
             <select id="snap">
               <option value="0">なし</option>
               <option value="0.25">16分</option>
@@ -1003,15 +1189,12 @@
 
         <section class="export-panel">
           <div class="export-title">
-            <div class="export-actions">
-              <button id="saveWork" class="primary" type="button" data-icon="download">作業内容を保存</button>
-              <button id="saveInstructions" type="button" data-icon="file-text">AI用指示を保存</button>
-              <button id="saveChart" type="button" data-icon="file-text">チャート雛形を保存</button>
-            </div>
+            <span>書き出し</span>
             <span id="markerCount">0 keys</span>
           </div>
-          <div class="json-box">
-            <textarea id="exportText" spellcheck="false"></textarea>
+          <div class="export-actions">
+            <button id="saveWork" class="primary" type="button" data-icon="download" title="編集を再開するための JSON（画像込み）をダウンロード。「作業内容を読込」で復元できます">作業内容を保存</button>
+            <button id="saveInstructions" type="button" data-icon="file-text" title="Claude に渡す Markdown 指示書をダウンロード">AI用指示を保存</button>
           </div>
         </section>
       </aside>
@@ -1030,6 +1213,66 @@
         <button id="followToggle" data-icon="locate" title="再生ヘッドに追従（ON=シアン）" aria-pressed="true">追従</button>
       </div>
     </footer>
+  </div>
+
+  <div class="modal-backdrop hidden" id="helpModal" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+    <div class="modal">
+      <div class="modal-head">
+        <div>
+          <h2 id="helpTitle">はじめに ・ 使い方</h2>
+          <p class="modal-sub">曲を聴きながら「音ハメ」ポイントにマーカー（♪）を打ち、AI 用の指示書（Markdown）を書き出すツールです。音源はローカルで処理され、外部には送信されません。</p>
+        </div>
+        <button id="helpClose" class="icon ghost" data-icon="x" aria-label="閉じる" title="閉じる（Esc）"></button>
+      </div>
+      <div class="modal-body">
+        <ol class="steps">
+          <li><strong>音源を読み込む</strong> — 左上の「音源を選択」か、タイムラインへ音声ファイルをドロップします。手元に音源がなければ下の「デモ音源で試す」でクリック音を生成できます。</li>
+          <li><strong>ステージ設定を入力</strong> — 曲名・BPM・拍子・拍オフセットを入れると、波形に拍グリッドが重なります。マーカー位置は「小節:拍」で確認できます。</li>
+          <li><strong>再生しながら打刻</strong> — <span class="kbd">Space</span> で再生し、要所で <span class="kbd">K</span> を押すとその位置にマーカーが入ります。右パネルでラベル・コメント・±10ms の微調整ができます。</li>
+          <li><strong>書き出す</strong> — 右下の2ボタンから保存します。<strong>作業内容を保存</strong>（編集再開用 JSON）／<strong>AI用指示を保存</strong>（Claude に渡す Markdown）。</li>
+        </ol>
+        <div class="help-section">
+          <h3>キーボード</h3>
+          <table class="help-table">
+            <tr><td><span class="kbd">Space</span></td><td>再生 / 停止</td></tr>
+            <tr><td><span class="kbd">K</span></td><td>再生位置にマーカー追加（コメント欄にフォーカス）</td></tr>
+            <tr><td><span class="kbd">I</span></td><td>選択マーカーに画像を添付</td></tr>
+            <tr><td><span class="kbd">Delete</span></td><td>選択マーカーを削除</td></tr>
+            <tr><td><span class="kbd">[</span> / <span class="kbd">]</span></td><td>選択マーカーを −10ms / +10ms 微調整</td></tr>
+            <tr><td><span class="kbd">←</span> / <span class="kbd">→</span></td><td>タイムラインを横スクロール（<span class="kbd">Shift</span> で大きく）</td></tr>
+            <tr><td><span class="kbd">+</span> / <span class="kbd">-</span></td><td>ズームイン / ズームアウト</td></tr>
+            <tr><td><span class="kbd">?</span></td><td>この画面を開く</td></tr>
+          </table>
+        </div>
+        <div class="help-section">
+          <h3>マウス</h3>
+          <table class="help-table">
+            <tr><td>クリック</td><td>その位置へシーク（<span class="kbd">Shift</span>+クリックでマーカー追加）</td></tr>
+            <tr><td>ドラッグ / ホイール</td><td>横スクロール（<span class="kbd">Ctrl</span>+ホイールでズーム）</td></tr>
+            <tr><td>マーカーをドラッグ</td><td>時刻を移動</td></tr>
+            <tr><td>一覧の行をダブルクリック</td><td>その時刻へジャンプ</td></tr>
+          </table>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <span class="modal-hint">編集内容は曲名ごとに自動保存されます（音源ファイル自体は保存されません）。</span>
+        <button id="helpTour" class="primary" data-icon="locate" title="実際の画面上で、次に押すボタンを順番に案内します">ガイドツアーで始める</button>
+        <button id="helpDemo" data-icon="music">デモ音源で試す</button>
+        <button id="helpChooseAudio" data-icon="folder-open">音源を選択して始める</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="tourHighlight" class="tour-highlight hidden" aria-hidden="true"></div>
+  <div id="tourBalloon" class="tour-balloon hidden" role="dialog" aria-label="ガイドツアー">
+    <span id="tourCount" class="tour-count"></span>
+    <h3 id="tourTitle"></h3>
+    <p id="tourText"></p>
+    <div class="tour-actions">
+      <span class="tour-hint">Esc で終了</span>
+      <button id="tourSkip" type="button">終了</button>
+      <button id="tourNext" class="primary" type="button">次へ</button>
+    </div>
   </div>
 
   <audio id="audio" preload="auto"></audio>
@@ -1074,7 +1317,6 @@
       nudgeForwardLarge: document.getElementById("nudgeForwardLarge"),
       snapMarker: document.getElementById("snapMarker"),
       duplicateMarker: document.getElementById("duplicateMarker"),
-      exportText: document.getElementById("exportText"),
       markerCount: document.getElementById("markerCount"),
       seek: document.getElementById("seek"),
       currentTime: document.getElementById("currentTime"),
@@ -1085,9 +1327,22 @@
       jumpForward: document.getElementById("jumpForward"),
       saveWork: document.getElementById("saveWork"),
       saveInstructions: document.getElementById("saveInstructions"),
-      saveChart: document.getElementById("saveChart"),
       importJson: document.getElementById("importJson"),
       jsonInput: document.getElementById("jsonInput"),
+      demoAudio: document.getElementById("demoAudio"),
+      helpButton: document.getElementById("helpButton"),
+      helpModal: document.getElementById("helpModal"),
+      helpClose: document.getElementById("helpClose"),
+      helpDemo: document.getElementById("helpDemo"),
+      helpChooseAudio: document.getElementById("helpChooseAudio"),
+      helpTour: document.getElementById("helpTour"),
+      tourHighlight: document.getElementById("tourHighlight"),
+      tourBalloon: document.getElementById("tourBalloon"),
+      tourCount: document.getElementById("tourCount"),
+      tourTitle: document.getElementById("tourTitle"),
+      tourText: document.getElementById("tourText"),
+      tourSkip: document.getElementById("tourSkip"),
+      tourNext: document.getElementById("tourNext"),
     };
 
     let audioContext;
@@ -1104,9 +1359,9 @@
     ];
     let selectedId = null;
     let idSeed = 1;
-    let exportDirty = false;
     const STORAGE_PREFIX = "timingEditor:";
     const LAST_SLUG_KEY = "timingEditor:lastSlug";
+    const HELP_SEEN_KEY = "timingEditor:helpSeen";
     let autoSaveTimer = 0;
     let currentStorageSlug = "";
     let quotaWarned = false;
@@ -1141,6 +1396,7 @@
       "file-input": '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><path d="M14 2v6h6"></path><path d="M10 13h6"></path><path d="m13 10 3 3-3 3"></path>',
       "file-text": '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><path d="M14 2v6h6"></path><path d="M9 13h6"></path><path d="M9 17h6"></path>',
       "folder-open": '<path d="M6 14 8 5a2 2 0 0 1 2-1h3l2 3h5a2 2 0 0 1 2 2v3"></path><path d="M3 8h5l2 3h11l-3 8a2 2 0 0 1-2 1H5a2 2 0 0 1-2-2Z"></path>',
+      "help-circle": '<circle cx="12" cy="12" r="10"></circle><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 2.3-3 4"></path><path d="M12 17h.01"></path>',
       image: '<rect x="3" y="5" width="18" height="14" rx="2"></rect><circle cx="8.5" cy="10.5" r="1.5"></circle><path d="m21 15-5-5L5 21"></path>',
       locate: '<path d="M12 2v3"></path><path d="M12 19v3"></path><path d="M2 12h3"></path><path d="M19 12h3"></path><circle cx="12" cy="12" r="7"></circle><circle cx="12" cy="12" r="2"></circle>',
       magnet: '<path d="M6 15V7a4 4 0 0 1 8 0v8"></path><path d="M6 15a6 6 0 0 0 12 0V7"></path><path d="M6 11h4"></path><path d="M14 11h4"></path>',
@@ -1419,6 +1675,17 @@
         ctx.moveTo(0, mid);
         ctx.lineTo(rect.width, mid);
         ctx.stroke();
+        if (!audio.src) {
+          ctx.textAlign = "center";
+          ctx.fillStyle = "rgba(250, 249, 245, 0.6)";
+          ctx.font = "600 18px Yu Gothic UI, sans-serif";
+          ctx.fillText("♪ 音声ファイルをここへドロップ", rect.width / 2, mid - 34);
+          ctx.fillStyle = "rgba(250, 249, 245, 0.42)";
+          ctx.font = "500 13px Yu Gothic UI, sans-serif";
+          ctx.fillText("または左上の「音源を選択」/「デモ音源」から読み込み", rect.width / 2, mid - 8);
+          ctx.fillText("初めての方は右上の「使い方」へ", rect.width / 2, mid + 14);
+          ctx.textAlign = "left";
+        }
       }
 
       markers.forEach((marker, index) => {
@@ -1515,7 +1782,6 @@
       }
       ui.markerStrip.replaceChildren(fragment);
       ui.markerCount.textContent = `${markers.length} keys`;
-      updateExport();
       updateSelectedSummary();
       updateImagePreview();
       requestDraw();
@@ -1697,6 +1963,7 @@
     function nudgeSelected(delta) {
       const marker = markers.find((item) => item.id === selectedId);
       if (!marker) return;
+      tourFlags.nudged = true;
       marker.time = Math.max(0, marker.time + delta);
       ui.status.textContent = `${delta > 0 ? "+" : ""}${Math.round(delta * 1000)}ms: ${formatTime(marker.time)}`;
       selectMarker(marker.id, true);
@@ -1810,6 +2077,228 @@
         return localStorage.getItem(key) || "";
       } catch (error) {
         return "";
+      }
+    }
+
+    function storageSet(key, value) {
+      try {
+        localStorage.setItem(key, value);
+      } catch (error) {
+        // 容量超過などで保存できなくても動作は続行する
+      }
+    }
+
+    function isHelpOpen() {
+      return !ui.helpModal.classList.contains("hidden");
+    }
+
+    function openHelp() {
+      if (tourActive()) endTour(false);
+      ui.helpModal.classList.remove("hidden");
+    }
+
+    function closeHelp() {
+      if (!isHelpOpen()) return;
+      ui.helpModal.classList.add("hidden");
+      storageSet(HELP_SEEN_KEY, "1");
+    }
+
+    // ---- ガイドツアー ----
+    // 実画面上で「次に押すボタン」をスポットライト+吹き出しで順番に案内する。
+    // 各ステップは done() を満たすと自動で次へ進む。すでに満たしているステップは飛ばすので、
+    // 途中で Esc・「終了」で中断しても、? キー →「ガイドツアーで始める」で続きから再開できる。
+    const tourFlags = { played: false, nudged: false, saved: false, markerBaseline: 0 };
+    let tourIndex = -1;
+    let tourTimer = 0;
+    let tourHasProgress = false; // 中断中は進捗を保持し、? からの再開時に済みステップを飛ばす
+
+    const tourSteps = [
+      {
+        target: () => ui.demoAudio,
+        title: "音源を読み込む",
+        text: "「デモ音源」を押すと 144BPM のクリック音が読み込まれ、すぐに試せます。自分の曲を使う場合は左の「音源を選択」でも構いません。",
+        done: () => (audio.duration || 0) > 0,
+      },
+      {
+        target: () => ui.play,
+        title: "再生する",
+        text: "下の「再生」を押して曲を聴きます。Space キーでも再生 / 停止できます。",
+        done: () => tourFlags.played || !audio.paused,
+      },
+      {
+        target: () => ui.addMarker,
+        title: "打刻する",
+        text: "音を合わせたい瞬間に「キー追加」を押すと、再生位置にマーカー（♪）が入ります。再生しながら K キーを押すのが手早いです。",
+        enter: () => { tourFlags.markerBaseline = markers.length; },
+        done: () => markers.length > tourFlags.markerBaseline,
+      },
+      {
+        target: () => ui.nudgeBack.parentElement,
+        title: "打点を微調整する",
+        text: "選択中のマーカーをここで ±10ms / ±50ms 動かしたり、「拍へ」でグリッドに吸着できます（[ / ] キーでも可）。試したら「次へ」を押してください。",
+        done: () => tourFlags.nudged,
+      },
+      {
+        target: () => ui.saveInstructions,
+        title: "書き出す",
+        text: "「AI用指示を保存」で Claude に渡す Markdown 指示書をダウンロードします。これで基本の流れは一通り完了です。",
+        done: () => tourFlags.saved,
+      },
+    ];
+
+    function tourActive() {
+      return tourIndex >= 0;
+    }
+
+    function startTour() {
+      closeHelp();
+      if (!tourHasProgress) {
+        tourFlags.played = false;
+        tourFlags.nudged = false;
+        tourFlags.saved = false;
+        tourFlags.markerBaseline = markers.length;
+        tourHasProgress = true;
+      }
+      tourIndex = -1;
+      ui.tourHighlight.classList.remove("hidden");
+      ui.tourBalloon.classList.remove("hidden");
+      advanceTour();
+      if (tourActive() && !tourTimer) tourTimer = window.setInterval(tickTour, 250);
+    }
+
+    function advanceTour() {
+      tourIndex += 1;
+      while (tourIndex < tourSteps.length && tourSteps[tourIndex].done()) tourIndex += 1;
+      if (tourIndex >= tourSteps.length) {
+        endTour(true);
+        return;
+      }
+      const step = tourSteps[tourIndex];
+      step.enter?.();
+      ui.tourCount.textContent = `ステップ ${tourIndex + 1} / ${tourSteps.length}`;
+      ui.tourTitle.textContent = step.title;
+      ui.tourText.textContent = step.text;
+      ui.tourNext.textContent = tourIndex === tourSteps.length - 1 ? "完了" : "次へ";
+      positionTour();
+    }
+
+    function tickTour() {
+      if (!tourActive()) return;
+      positionTour();
+      if (tourSteps[tourIndex].done()) advanceTour();
+    }
+
+    function positionTour() {
+      if (!tourActive()) return;
+      const rect = tourSteps[tourIndex].target().getBoundingClientRect();
+      const pad = 6;
+      const highlight = ui.tourHighlight.style;
+      highlight.left = `${rect.left - pad}px`;
+      highlight.top = `${rect.top - pad}px`;
+      highlight.width = `${rect.width + pad * 2}px`;
+      highlight.height = `${rect.height + pad * 2}px`;
+      const balloonWidth = ui.tourBalloon.offsetWidth;
+      const balloonHeight = ui.tourBalloon.offsetHeight;
+      const margin = 14;
+      let top = rect.bottom + margin;
+      if (top + balloonHeight > window.innerHeight - 12) {
+        top = Math.max(12, rect.top - balloonHeight - margin);
+      }
+      const left = Math.min(
+        Math.max(12, rect.left),
+        Math.max(12, window.innerWidth - balloonWidth - 12),
+      );
+      ui.tourBalloon.style.top = `${top}px`;
+      ui.tourBalloon.style.left = `${left}px`;
+    }
+
+    function endTour(completed) {
+      tourIndex = -1;
+      if (tourTimer) {
+        window.clearInterval(tourTimer);
+        tourTimer = 0;
+      }
+      ui.tourHighlight.classList.add("hidden");
+      ui.tourBalloon.classList.add("hidden");
+      if (completed) tourHasProgress = false; // 完走後は次回まっさらから始める
+      ui.status.textContent = completed
+        ? "ガイドツアー完了！ ? キーでいつでも使い方を開けます"
+        : "ツアーを終了しました（? キー →「ガイドツアーで始める」で再開できます）";
+    }
+
+    // レンダリング済み AudioBuffer(モノラル前提)を 16bit PCM の WAV Blob にする。
+    function audioBufferToWavBlob(buffer) {
+      const data = buffer.getChannelData(0);
+      const length = data.length;
+      const arrayBuffer = new ArrayBuffer(44 + length * 2);
+      const view = new DataView(arrayBuffer);
+      const writeAscii = (offset, text) => {
+        for (let i = 0; i < text.length; i += 1) view.setUint8(offset + i, text.charCodeAt(i));
+      };
+      writeAscii(0, "RIFF");
+      view.setUint32(4, 36 + length * 2, true);
+      writeAscii(8, "WAVE");
+      writeAscii(12, "fmt ");
+      view.setUint32(16, 16, true);
+      view.setUint16(20, 1, true);
+      view.setUint16(22, 1, true);
+      view.setUint32(24, buffer.sampleRate, true);
+      view.setUint32(28, buffer.sampleRate * 2, true);
+      view.setUint16(32, 2, true);
+      view.setUint16(34, 16, true);
+      writeAscii(36, "data");
+      view.setUint32(40, length * 2, true);
+      for (let i = 0; i < length; i += 1) {
+        const sample = Math.max(-1, Math.min(1, data[i]));
+        view.setInt16(44 + i * 2, sample < 0 ? sample * 0x8000 : sample * 0x7fff, true);
+      }
+      return new Blob([arrayBuffer], { type: "audio/wav" });
+    }
+
+    // 音源が手元にない人向けのデモ音源。144BPM のクリック音(小節頭はアクセント)を
+    // OfflineAudioContext で 18小節ぶん合成する。既定マーカーは 144BPM の拍上にあるため
+    // そのまま拍グリッドと一致する。
+    const DEMO_BPM = 144;
+    async function generateDemoAudio() {
+      const sampleRate = 44100;
+      const beatDur = 60 / DEMO_BPM;
+      const beats = 72;
+      const totalSec = beats * beatDur + 0.5;
+      const offline = new OfflineAudioContext(1, Math.ceil(totalSec * sampleRate), sampleRate);
+      for (let i = 0; i < beats; i += 1) {
+        const start = i * beatDur;
+        const accent = i % 4 === 0;
+        const osc = offline.createOscillator();
+        const gain = offline.createGain();
+        osc.frequency.value = accent ? 1318 : 880;
+        gain.gain.setValueAtTime(accent ? 0.55 : 0.32, start);
+        gain.gain.exponentialRampToValueAtTime(0.001, start + 0.08);
+        osc.connect(gain).connect(offline.destination);
+        osc.start(start);
+        osc.stop(start + 0.1);
+      }
+      const rendered = await offline.startRendering();
+      return audioBufferToWavBlob(rendered);
+    }
+
+    let demoLoading = false;
+    async function loadDemoAudio() {
+      if (demoLoading) return;
+      demoLoading = true;
+      ui.status.textContent = "デモ音源を生成中…";
+      try {
+        ui.bpm.value = String(DEMO_BPM);
+        ui.measure.value = "4";
+        ui.beatOffset.value = "0";
+        const blob = await generateDemoAudio();
+        await loadAudioBlob(blob, "デモ音源（144BPM クリック）");
+        closeHelp();
+        updateBeatReadout();
+        requestDraw();
+      } catch (error) {
+        ui.status.textContent = `デモ音源を生成できません: ${error.message || error.name || "unknown"}`;
+      } finally {
+        demoLoading = false;
       }
     }
 
@@ -1942,55 +2431,6 @@
 
       lines.push("");
       return lines.join("\n");
-    }
-
-    // StageChart 雛形(<slug>.chart.json)。マーカーを bar:beat の named markers に落とし、
-    // meta を埋め、events は空配列。Unity 側 Tools/Bullet Hell/Compile Stage Charts でコンパイルする。
-    function buildChartTemplate() {
-      const bpm = Number(ui.bpm.value) || 144;
-      const measure = measureCount();
-      const beatDur = beatDuration();
-      const list = sortedMarkers();
-      const markers = {
-        _comment: "各マーカーの bar:beat(1始まり)。ここを書き換えて再コンパイルするとリタイムできる。",
-      };
-      const labels = {};
-      list.forEach((marker, index) => {
-        const name = `M${index + 1}`;
-        const beatsFromStart = (marker.time - beatOffsetSec()) / beatDur;
-        const q = Math.round(beatsFromStart * 4) / 4; // nearest 16th (quarter beat)
-        const bar = Math.floor(q / measure) + 1;
-        const beatInBar = q - (bar - 1) * measure + 1;
-        const beatStr = Number.isInteger(beatInBar) ? String(beatInBar) : String(beatInBar);
-        markers[name] = `${bar}:${beatStr}`;
-        const label = (marker.label || "").trim() || (marker.comment || "").trim().split(/\r?\n/)[0];
-        if (label) labels[name] = label;
-      });
-      const chart = {
-        _comment: "StageChart 雛形。events は空。時刻は bar:beat / 秒 / \"M12 + 2beat\" 等の式で書ける。"
-          + " イベント例: { \"at\": \"M1\", \"clip\": \"バッファ名\" }、Clear は { \"at\": \"M31\", \"kind\": \"clear\" }。"
-          + " コンパイル: Unity メニュー Tools/Bullet Hell/Compile Stage Charts。",
-        meta: {
-          stageName: trackName() || fileSlug(),
-          bpm,
-          measure,
-          beatOffsetSec: beatOffsetSec(),
-          delayTime: 0,
-          stageDescription: composerName(),
-        },
-        markers,
-        _markerLabels: labels,
-        events: [],
-        enemies: [],
-      };
-      return JSON.stringify(chart, null, 2);
-    }
-
-    // テキストエリアのプレビューは AI用指示(Markdown)固定。
-    function updateExport() {
-      if (exportDirty && document.activeElement === ui.exportText) return;
-      ui.exportText.value = buildMarkdown();
-      exportDirty = false;
     }
 
     function download(name, content, type) {
@@ -2133,7 +2573,6 @@
         if (payload.composer != null) ui.composer.value = String(payload.composer);
         updateTitle();
         selectedId = markers[0]?.id ?? null;
-        exportDirty = false;
         if (selectedId != null) selectMarker(selectedId);
         renderMarkers();
         ui.status.textContent = `${sourceLabel}を読み込みました（${markers.length}件）`;
@@ -2233,27 +2672,16 @@
       control.addEventListener("change", autoUpdateSelected);
     });
 
-    ui.exportText.addEventListener("input", () => {
-      exportDirty = true;
-    });
-
     // 作業内容を保存: 編集を再開できる JSON をダウンロード（画像 base64 込み）。
     ui.saveWork.addEventListener("click", () => {
       download(`${fileSlug()}-timing-markers.json`, buildJson(), "application/json");
       ui.status.textContent = "作業内容(JSON)を保存しました";
     });
 
-    // AI用指示を保存: プレビュー中の Markdown 指示書をダウンロード。
+    // AI用指示を保存: Markdown 指示書をダウンロード。
     ui.saveInstructions.addEventListener("click", () => {
-      const markdown = exportDirty ? ui.exportText.value : buildMarkdown();
-      download(`${fileSlug()}-timing-instructions.md`, markdown, "text/markdown");
+      download(`${fileSlug()}-timing-instructions.md`, buildMarkdown(), "text/markdown");
       ui.status.textContent = "AI用指示(Markdown)を保存しました";
-    });
-
-    // チャート雛形を保存: マーカーを named markers にした <slug>.chart.json をダウンロード。
-    ui.saveChart.addEventListener("click", () => {
-      download(`${fileSlug()}.chart.json`, buildChartTemplate(), "application/json");
-      ui.status.textContent = "StageChart 雛形(chart.json)を保存しました";
     });
 
     // 追従トグル: ON で再生ヘッドにエッジ追従、OFF で自由スクロール。
@@ -2266,6 +2694,32 @@
         centerTimelineOn(audio.currentTime || 0, true);
         updateFollowButton();
       }
+    });
+
+    ui.demoAudio.addEventListener("click", loadDemoAudio);
+    ui.helpButton.addEventListener("click", openHelp);
+    ui.helpClose.addEventListener("click", closeHelp);
+    ui.helpDemo.addEventListener("click", loadDemoAudio);
+    ui.helpChooseAudio.addEventListener("click", () => {
+      closeHelp();
+      ui.audioInput.click();
+    });
+    ui.helpModal.addEventListener("click", (event) => {
+      if (event.target === ui.helpModal) closeHelp();
+    });
+
+    ui.helpTour.addEventListener("click", startTour);
+    ui.tourSkip.addEventListener("click", () => endTour(false));
+    ui.tourNext.addEventListener("click", advanceTour);
+    window.addEventListener("resize", positionTour);
+    audio.addEventListener("play", () => {
+      tourFlags.played = true;
+    });
+    ui.nudgeBack.parentElement.addEventListener("click", (event) => {
+      if (event.target.closest("button")) tourFlags.nudged = true;
+    });
+    ui.saveInstructions.addEventListener("click", () => {
+      tourFlags.saved = true;
     });
 
     ui.importJson.addEventListener("click", () => ui.jsonInput.click());
@@ -2281,29 +2735,17 @@
       }
     });
 
-    ui.bpm.addEventListener("input", () => {
-      updateExport();
-      updateBeatReadout();
-      requestDraw();
-      scheduleAutoSave();
-    });
-    ui.measure.addEventListener("input", () => {
-      updateExport();
-      updateBeatReadout();
-      requestDraw();
-      scheduleAutoSave();
-    });
-    ui.beatOffset.addEventListener("input", () => {
-      updateExport();
-      updateBeatReadout();
-      requestDraw();
-      scheduleAutoSave();
+    [ui.bpm, ui.measure, ui.beatOffset].forEach((control) => {
+      control.addEventListener("input", () => {
+        updateBeatReadout();
+        requestDraw();
+        scheduleAutoSave();
+      });
     });
 
     [ui.trackName, ui.composer].forEach((control) => {
       control.addEventListener("input", () => {
         updateTitle();
-        updateExport();
         scheduleAutoSave();
       });
     });
@@ -2497,8 +2939,25 @@
     });
 
     window.addEventListener("keydown", async (event) => {
+      if (isHelpOpen()) {
+        if (event.key === "Escape") {
+          event.preventDefault();
+          closeHelp();
+        }
+        return;
+      }
+      if (tourActive() && event.key === "Escape") {
+        event.preventDefault();
+        endTour(false);
+        return;
+      }
       const tag = document.activeElement?.tagName;
       if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+      if (event.key === "?") {
+        event.preventDefault();
+        openHelp();
+        return;
+      }
       if (event.code === "Space") {
         event.preventDefault();
         ui.play.click();
@@ -2532,11 +2991,13 @@
 
     decorateIcons();
     updateTitle();
-    restoreLastSession();
+    const restoredSession = restoreLastSession();
     renderMarkers();
     if (markers.length) selectMarker(markers[0].id);
     updateFollowButton();
     updateTransport();
+    // 初回訪問（復元データも閲覧履歴もない）時だけ、使い方モーダルを自動表示する。
+    if (!restoredSession && !storageGet(HELP_SEEN_KEY)) openHelp();
     window.setTimeout(() => {
       if (!audio.src) ensureAudioLoaded();
     }, 80);
