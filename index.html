@@ -2107,41 +2107,47 @@
     // 実画面上で「次に押すボタン」をスポットライト+吹き出しで順番に案内する。
     // 各ステップは done() を満たすと自動で次へ進む。すでに満たしているステップは飛ばすので、
     // 途中で Esc・「終了」で中断しても、? キー →「ガイドツアーで始める」で続きから再開できる。
-    const tourFlags = { played: false, nudged: false, saved: false, markerBaseline: 0 };
+    const tourFlags = { played: false, bpmTouched: false, nudged: false, saved: false, markerBaseline: 0 };
     let tourIndex = -1;
     let tourTimer = 0;
     let tourHasProgress = false; // 中断中は進捗を保持し、? からの再開時に済みステップを飛ばす
 
     const tourSteps = [
       {
-        target: () => ui.demoAudio,
-        title: "音源を読み込む",
-        text: "「デモ音源」を押すと 144BPM のクリック音が読み込まれ、すぐに試せます。自分の曲を使う場合は左の「音源を選択」でも構いません。",
+        target: () => ui.chooseAudio,
+        title: "音源を選択",
+        text: "「音源を選択」で自分の曲（音声ファイル）を読み込みます。手元に無ければ右隣の「デモ音源」でも先へ進めます。ファイルは外部に送信されません。",
         done: () => (audio.duration || 0) > 0,
       },
       {
+        target: () => ui.bpm,
+        title: "BPM調整",
+        text: "曲のテンポを BPM に入れて、波形に重なる拍グリッドを曲に合わせます。入力すると自動で次へ進みます（分からなければ「次へ」で飛ばしても構いません）。",
+        done: () => tourFlags.bpmTouched,
+      },
+      {
         target: () => ui.play,
-        title: "再生する",
+        title: "再生",
         text: "下の「再生」を押して曲を聴きます。Space キーでも再生 / 停止できます。",
         done: () => tourFlags.played || !audio.paused,
       },
       {
         target: () => ui.addMarker,
-        title: "打刻する",
-        text: "音を合わせたい瞬間に「キー追加」を押すと、再生位置にマーカー（♪）が入ります。再生しながら K キーを押すのが手早いです。",
+        title: "メモ追加",
+        text: "合わせたい瞬間に K キー（または「キー追加」）を押すと、再生位置にマーカー（♪）が入ります。続けて右の「ラベル」「コメント」に音ハメのメモを書きましょう。",
         enter: () => { tourFlags.markerBaseline = markers.length; },
         done: () => markers.length > tourFlags.markerBaseline,
       },
       {
         target: () => ui.nudgeBack.parentElement,
-        title: "打点を微調整する",
-        text: "選択中のマーカーをここで ±10ms / ±50ms 動かしたり、「拍へ」でグリッドに吸着できます（[ / ] キーでも可）。試したら「次へ」を押してください。",
+        title: "タイミングの調整",
+        text: "選択中のマーカーをここで ±10ms / ±50ms 動かしたり、「拍へ」でグリッドに吸着できます（[ / ] キーでも可）。狙った瞬間にぴったり合わせられます。",
         done: () => tourFlags.nudged,
       },
       {
-        target: () => ui.saveInstructions,
-        title: "書き出す",
-        text: "「AI用指示を保存」で Claude に渡す Markdown 指示書をダウンロードします。これで基本の流れは一通り完了です。",
+        target: () => ui.saveWork.parentElement,
+        title: "作業内容を保存 / AI用指示を保存",
+        text: "「作業内容を保存」で編集を再開できる JSON を、「AI用指示を保存」で Claude に渡す Markdown 指示書をダウンロードします。どちらかを押せば基本の流れは完了です。",
         done: () => tourFlags.saved,
       },
     ];
@@ -2157,6 +2163,7 @@
       storageSet(HELP_SEEN_KEY, "1");
       if (!tourHasProgress) {
         tourFlags.played = false;
+        tourFlags.bpmTouched = false;
         tourFlags.nudged = false;
         tourFlags.saved = false;
         tourFlags.markerBaseline = markers.length;
@@ -2721,8 +2728,8 @@
     ui.nudgeBack.parentElement.addEventListener("click", (event) => {
       if (event.target.closest("button")) tourFlags.nudged = true;
     });
-    ui.saveInstructions.addEventListener("click", () => {
-      tourFlags.saved = true;
+    ui.saveWork.parentElement.addEventListener("click", (event) => {
+      if (event.target.closest("button")) tourFlags.saved = true;
     });
 
     ui.importJson.addEventListener("click", () => ui.jsonInput.click());
@@ -2745,6 +2752,8 @@
         scheduleAutoSave();
       });
     });
+    // ガイドツアーの「BPM調整」ステップ: BPM を編集したら次へ進める
+    ui.bpm.addEventListener("input", () => { tourFlags.bpmTouched = true; });
 
     [ui.trackName, ui.composer].forEach((control) => {
       control.addEventListener("input", () => {
