@@ -292,7 +292,7 @@
 
     .timeline-shell {
       display: grid;
-      grid-template-rows: auto minmax(0, 1fr) 172px;
+      grid-template-rows: auto auto minmax(0, 1fr) 172px;
       min-width: 0;
       border-right: 1px solid var(--hairline);
       background: var(--canvas);
@@ -353,6 +353,30 @@
       background: var(--canvas);
       color: var(--body);
       font: 700 11px/1 "JetBrains Mono", "Cascadia Mono", Consolas, monospace;
+    }
+
+    .video-preview {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 180px;
+      max-height: 36vh;
+      padding: 10px;
+      border-bottom: 1px solid var(--hairline);
+      background: #080808;
+    }
+
+    .video-preview.hidden {
+      display: none;
+    }
+
+    .video-preview video {
+      display: block;
+      width: 100%;
+      height: 100%;
+      max-height: calc(36vh - 20px);
+      object-fit: contain;
+      background: #000;
     }
 
     .timeline-wrap {
@@ -1063,8 +1087,8 @@
         </div>
       </div>
       <div class="file-row">
-        <button id="chooseAudio" data-icon="folder-open" title="ローカルの音声ファイルを読み込みます（外部送信はされません）">音源を選択</button>
-        <input id="audioInput" class="hidden-input" type="file" accept="audio/*">
+        <button id="chooseAudio" data-icon="folder-open" title="ローカルの動画または音声を読み込みます（外部送信はされません）">動画/音声を選択</button>
+        <input id="audioInput" class="hidden-input" type="file" accept="video/*,audio/*,.mp4,.webm,.mov,.m4v,.mp3,.wav,.m4a">
         <button id="demoAudio" class="ghost" data-icon="music" title="手元に音源がなくても試せる 144BPM のクリック音を生成して読み込みます">デモ音源</button>
         <span id="fileName" class="file-name">未読み込み</span>
       </div>
@@ -1113,10 +1137,14 @@
           </div>
         </div>
 
+        <div id="videoPreview" class="video-preview hidden">
+          <video id="video" controls playsinline preload="metadata"></video>
+        </div>
+
         <div class="timeline-wrap" id="timelineWrap">
           <canvas id="waveCanvas"></canvas>
           <div id="timeReadout" class="time-readout">00:00.000</div>
-          <div id="status" class="status">音源を読み込んでください。音声ファイルはここへドロップできます。</div>
+          <div id="status" class="status">音源を読み込んでください。動画/音声ファイルはここへドロップできます。</div>
           <div class="timeline-help" aria-hidden="true">
             <span class="help-chip">クリック: シーク</span>
             <span class="help-chip">ドラッグ: 横スクロール</span>
@@ -1226,7 +1254,7 @@
       </div>
       <div class="modal-body">
         <ol class="steps">
-          <li><strong>音源を読み込む</strong> — 左上の「音源を選択」か、タイムラインへ音声ファイルをドロップします。手元に音源がなければ下の「デモ音源で試す」でクリック音を生成できます。</li>
+          <li><strong>動画/音声を読み込む</strong> — 左上の「動画/音声を選択」か、タイムラインへ動画/音声ファイルをドロップします。手元に音源がなければ下の「デモ音源で試す」でクリック音を生成できます。</li>
           <li><strong>ステージ設定を入力</strong> — 曲名・BPM・拍子・拍オフセットを入れると、波形に拍グリッドが重なります。マーカー位置は「小節:拍」で確認できます。</li>
           <li><strong>再生しながら打刻</strong> — <span class="kbd">Space</span> で再生し、要所で <span class="kbd">K</span> を押すとその位置にマーカーが入ります。右パネルでラベル・コメント・±10ms の微調整ができます。</li>
           <li><strong>書き出す</strong> — 右下の2ボタンから保存します。<strong>作業内容を保存</strong>（編集再開用 JSON）／<strong>AI用指示を保存</strong>（Claude に渡す Markdown）。</li>
@@ -1255,10 +1283,10 @@
         </div>
       </div>
       <div class="modal-actions">
-        <span class="modal-hint">編集内容は曲名ごとに自動保存されます（音源ファイル自体は保存されません）。</span>
+        <span class="modal-hint">編集内容は曲名ごとに自動保存されます（動画/音声ファイル自体は保存されません）。</span>
         <button id="helpTour" class="primary" data-icon="locate" title="実際の画面上で、次に押すボタンを順番に案内します">ガイドツアーで始める</button>
         <button id="helpDemo" data-icon="music">デモ音源で試す</button>
-        <button id="helpChooseAudio" data-icon="folder-open">音源を選択して始める</button>
+        <button id="helpChooseAudio" data-icon="folder-open">動画/音声を選択して始める</button>
       </div>
     </div>
   </div>
@@ -1279,6 +1307,8 @@
 
   <script>
     const audio = document.getElementById("audio");
+    const video = document.getElementById("video");
+    let media = audio;
     const canvas = document.getElementById("waveCanvas");
     const ctx = canvas.getContext("2d", { alpha: false });
     const waveformCanvas = document.createElement("canvas");
@@ -1287,6 +1317,7 @@
       app: document.getElementById("app"),
       chooseAudio: document.getElementById("chooseAudio"),
       audioInput: document.getElementById("audioInput"),
+      videoPreview: document.getElementById("videoPreview"),
       fileName: document.getElementById("fileName"),
       appTitle: document.getElementById("appTitle"),
       trackName: document.getElementById("trackName"),
@@ -1431,7 +1462,7 @@
     }
 
     function fullDuration() {
-      return duration || Math.max(35, audio.duration || 35);
+      return duration || Math.max(35, media.duration || 35);
     }
 
     function clamp(value, min, max) {
@@ -1497,7 +1528,7 @@
     function applyPlayheadFollow() {
       if (!followPlayhead) return;
       const info = visibleWindow();
-      const playhead = audio.currentTime || 0;
+      const playhead = media.currentTime || 0;
       const rightEdge = info.start + info.windowDuration * 0.7;
       if (playhead > rightEdge || playhead < info.start) {
         const nextStart = clamp(
@@ -1524,21 +1555,21 @@
     }
 
     function setAudioTime(nextTime, keepView = false) {
-      const limit = duration || audio.duration || fullDuration();
+      const limit = duration || media.duration || fullDuration();
       const safeTime = clamp(Number(nextTime) || 0, 0, limit);
-      if (!audio.src && !duration) {
+      if (!media.src && !duration) {
         viewCenter = clampViewCenter(safeTime);
         requestDraw();
         return;
       }
       try {
-        audio.currentTime = safeTime;
+        media.currentTime = safeTime;
       } catch (error) {
         viewCenter = clampViewCenter(safeTime);
         requestDraw();
         return;
       }
-      if (keepView) viewCenter = clampViewCenter(audio.currentTime);
+      if (keepView) viewCenter = clampViewCenter(media.currentTime);
       syncTransport();
     }
 
@@ -1547,9 +1578,9 @@
     }
 
     function isNearPlayhead(event, rect, windowInfo) {
-      if (!audio.src && !duration) return false;
+      if (!media.src && !duration) return false;
       const localX = event.clientX - rect.left;
-      const playX = timeToX(audio.currentTime || 0, rect, windowInfo);
+      const playX = timeToX(media.currentTime || 0, rect, windowInfo);
       return Math.abs(localX - playX) <= 18;
     }
 
@@ -1662,7 +1693,7 @@
       updateFollowButton();
       const windowInfo = visibleWindow();
       const mid = rect.height * 0.52;
-      const fastMode = isTimelinePanning || isPlayheadDragging || !audio.paused;
+      const fastMode = isTimelinePanning || isPlayheadDragging || !media.paused;
       ctx.fillStyle = "#181715";
       ctx.fillRect(0, 0, rect.width, rect.height);
 
@@ -1675,14 +1706,14 @@
         ctx.moveTo(0, mid);
         ctx.lineTo(rect.width, mid);
         ctx.stroke();
-        if (!audio.src) {
+        if (!media.src) {
           ctx.textAlign = "center";
           ctx.fillStyle = "rgba(250, 249, 245, 0.6)";
           ctx.font = "600 18px Yu Gothic UI, sans-serif";
-          ctx.fillText("♪ 音声ファイルをここへドロップ", rect.width / 2, mid - 34);
+          ctx.fillText("動画または音声ファイルをここへドロップ", rect.width / 2, mid - 34);
           ctx.fillStyle = "rgba(250, 249, 245, 0.42)";
           ctx.font = "500 13px Yu Gothic UI, sans-serif";
-          ctx.fillText("または左上の「音源を選択」/「デモ音源」から読み込み", rect.width / 2, mid - 8);
+          ctx.fillText("または左上の「動画/音声を選択」/「デモ音源」から読み込み", rect.width / 2, mid - 8);
           ctx.fillText("初めての方は右上の「使い方」へ", rect.width / 2, mid + 14);
           ctx.textAlign = "left";
         }
@@ -1711,7 +1742,7 @@
         }
       });
 
-      const playX = timeToX(audio.currentTime || 0, rect, windowInfo);
+      const playX = timeToX(media.currentTime || 0, rect, windowInfo);
       ctx.strokeStyle = "#cc785c";
       ctx.lineWidth = 2;
       ctx.beginPath();
@@ -1840,7 +1871,7 @@
     }
 
     function addMarker(label = "", sourceTime = null) {
-      const rawTime = sourceTime == null ? (audio.currentTime || Number(ui.markerTime.value) || 0) : sourceTime;
+      const rawTime = sourceTime == null ? (media.currentTime || Number(ui.markerTime.value) || 0) : sourceTime;
       const time = snapTime(rawTime);
       const marker = {
         id: idSeed++,
@@ -2115,9 +2146,9 @@
     const tourSteps = [
       {
         target: () => ui.chooseAudio,
-        title: "音源を選択",
-        text: "「音源を選択」で自分の曲（音声ファイル）を読み込みます。手元に無ければ右隣の「デモ音源」でも先へ進めます。ファイルは外部に送信されません。",
-        done: () => (audio.duration || 0) > 0,
+        title: "動画/音声を選択",
+        text: "「動画/音声を選択」で自分の曲（動画/音声ファイル）を読み込みます。手元に無ければ右隣の「デモ音源」でも先へ進めます。ファイルは外部に送信されません。",
+        done: () => (media.duration || 0) > 0,
       },
       {
         target: () => ui.bpm,
@@ -2129,7 +2160,7 @@
         target: () => ui.play,
         title: "再生",
         text: "下の「再生」を押して曲を聴きます。Space キーでも再生 / 停止できます。",
-        done: () => tourFlags.played || !audio.paused,
+        done: () => tourFlags.played || !media.paused,
       },
       {
         target: () => ui.addMarker,
@@ -2301,7 +2332,7 @@
         ui.measure.value = "4";
         ui.beatOffset.value = "0";
         const blob = await generateDemoAudio();
-        await loadAudioBlob(blob, "デモ音源（144BPM クリック）");
+        await loadMediaBlob(blob, "デモ音源（144BPM クリック）");
         closeHelp();
         updateBeatReadout();
         requestDraw();
@@ -2460,29 +2491,40 @@
       const response = await fetch(url);
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const blob = await response.blob();
-      await loadAudioBlob(blob, name);
+      await loadMediaBlob(blob, name);
     }
 
-    async function loadAudioBlob(blob, name) {
+    async function loadMediaBlob(blob, name) {
       if (audioObjectUrl) URL.revokeObjectURL(audioObjectUrl);
       const lowerName = String(name || "").toLowerCase();
-      const playableBlob = blob.type
-        ? blob
-        : new Blob([blob], { type: lowerName.endsWith(".m4a") ? "audio/mp4" : "audio/mpeg" });
+      const isVideo = String(blob.type || "").startsWith("video/")
+        || /\.(mp4|webm|mov|m4v)$/i.test(lowerName);
+
+      audio.pause();
+      video.pause();
+      audio.removeAttribute("src");
+      video.removeAttribute("src");
+      media = isVideo ? video : audio;
+      ui.videoPreview.classList.toggle("hidden", !isVideo);
+
+      const fallbackType = isVideo
+        ? (lowerName.endsWith(".webm") ? "video/webm" : "video/mp4")
+        : (lowerName.endsWith(".m4a") ? "audio/mp4" : "audio/mpeg");
+      const playableBlob = blob.type ? blob : new Blob([blob], { type: fallbackType });
       const objectUrl = URL.createObjectURL(playableBlob);
       audioObjectUrl = objectUrl;
       const applyMetadata = () => {
-        duration = audio.duration || duration;
-        viewCenter = clampViewCenter(audio.currentTime || 0);
+        duration = media.duration || duration;
+        viewCenter = clampViewCenter(media.currentTime || 0);
         ui.seek.max = duration || 0;
         ui.duration.textContent = formatTime(duration || 0);
         ui.status.textContent = `${name} / ${formatTime(duration || 0)}`;
         requestDraw();
       };
-      audio.src = objectUrl;
-      audio.load();
+      media.src = objectUrl;
+      media.load();
       ui.fileName.textContent = name;
-      audio.addEventListener("loadedmetadata", applyMetadata, { once: true });
+      media.addEventListener("loadedmetadata", applyMetadata, { once: true });
       window.setTimeout(() => {
         playableBlob.arrayBuffer()
           .then(decodeWaveform)
@@ -2492,7 +2534,7 @@
             requestDraw();
           });
       }, 40);
-      if (audio.readyState >= 1) applyMetadata();
+      if (media.readyState >= 1) applyMetadata();
     }
 
     async function decodeWaveform(buffer) {
@@ -2515,13 +2557,13 @@
     }
 
     async function ensureAudioLoaded() {
-      if (audio.src) return true;
-      ui.status.textContent = "音源を読み込んでください。「音源を選択」またはドロップで指定できます。";
+      if (media.src) return true;
+      ui.status.textContent = "動画または音声を読み込んでください。「動画/音声を選択」またはドロップで指定できます。";
       return false;
     }
 
     function syncTransport() {
-      const time = audio.currentTime || 0;
+      const time = media.currentTime || 0;
       applyPlayheadFollow();
       const label = formatTime(time);
       if (label !== lastTimeLabel) {
@@ -2534,7 +2576,7 @@
         ui.seek.value = seekValue;
         lastSeekValue = seekValue;
       }
-      setButtonIcon(ui.play, audio.paused ? "play" : "pause", audio.paused ? "再生" : "停止");
+      setButtonIcon(ui.play, media.paused ? "play" : "pause", media.paused ? "再生" : "停止");
       requestDraw();
     }
 
@@ -2544,7 +2586,7 @@
         lastPlaybackFrameAt = frameTime;
         syncTransport();
       }
-      if (!audio.paused) startPlaybackLoop();
+      if (!media.paused) startPlaybackLoop();
     }
 
     function startPlaybackLoop() {
@@ -2597,7 +2639,7 @@
     ui.audioInput.addEventListener("change", async () => {
       const file = ui.audioInput.files?.[0];
       if (!file) return;
-      await loadAudioBlob(file, file.name);
+      await loadMediaBlob(file, file.name);
     });
 
     ui.attachImage.addEventListener("click", () => ui.markerImageInput.click());
@@ -2619,27 +2661,27 @@
       if (!row) return;
       const marker = markers.find((item) => item.id === Number(row.dataset.id));
       if (!marker) return;
-      audio.currentTime = marker.time;
+      media.currentTime = marker.time;
       centerTimelineOn(marker.time, false);
       updateTransport();
     });
 
     ui.play.addEventListener("click", async () => {
-      if (!audio.src) {
+      if (!media.src) {
         if (await ensureAudioLoaded()) {
           ui.status.textContent = "音源を読み込みました。もう一度再生を押してください";
         }
         return;
       }
-      if (audio.paused) {
+      if (media.paused) {
         try {
           if (audioContext?.state === "suspended") audioContext.resume().catch(() => {});
-          audio.muted = false;
-          audio.volume = 1;
+          media.muted = false;
+          media.volume = 1;
           followPlayhead = true;
           ui.status.textContent = "再生開始中";
           await Promise.race([
-            audio.play(),
+            media.play(),
             new Promise((_, reject) => window.setTimeout(() => reject(new Error("再生開始がタイムアウトしました")), 1200)),
           ]);
           ui.status.textContent = `${ui.fileName.textContent} / 再生中`;
@@ -2648,7 +2690,7 @@
           ui.status.textContent = `再生できません: ${error.message || error.name || "unknown"}`;
         }
       } else {
-        audio.pause();
+        media.pause();
         stopPlaybackLoop();
       }
     });
@@ -2660,12 +2702,12 @@
 
     ui.jumpBack.addEventListener("click", () => {
       followPlayhead = true;
-      setAudioTime((audio.currentTime || 0) - 1, true);
+      setAudioTime((media.currentTime || 0) - 1, true);
     });
 
     ui.jumpForward.addEventListener("click", () => {
       followPlayhead = true;
-      setAudioTime((audio.currentTime || 0) + 1, true);
+      setAudioTime((media.currentTime || 0) + 1, true);
     });
 
     ui.addMarker.addEventListener("click", () => addMarker());
@@ -2701,7 +2743,7 @@
         updateFollowButton();
         requestDraw();
       } else {
-        centerTimelineOn(audio.currentTime || 0, true);
+        centerTimelineOn(media.currentTime || 0, true);
         updateFollowButton();
       }
     });
@@ -2722,8 +2764,10 @@
     ui.tourSkip.addEventListener("click", () => endTour(false));
     ui.tourNext.addEventListener("click", advanceTour);
     window.addEventListener("resize", positionTour);
-    audio.addEventListener("play", () => {
-      tourFlags.played = true;
+    [audio, video].forEach((element) => {
+      element.addEventListener("play", () => {
+        if (element === media) tourFlags.played = true;
+      });
     });
     ui.nudgeBack.parentElement.addEventListener("click", (event) => {
       if (event.target.closest("button")) tourFlags.nudged = true;
@@ -2764,14 +2808,21 @@
 
     ui.zoom.addEventListener("input", () => requestDraw());
     ui.snap.addEventListener("change", () => requestDraw());
-    audio.addEventListener("timeupdate", () => {
-      if (audio.paused) updateTransport();
-    });
-    audio.addEventListener("play", startPlaybackLoop);
-    audio.addEventListener("pause", stopPlaybackLoop);
-    audio.addEventListener("error", () => {
-      const code = audio.error?.code ? ` code ${audio.error.code}` : "";
-      ui.status.textContent = `音声を再生できません${code}`;
+    [audio, video].forEach((element) => {
+      element.addEventListener("timeupdate", () => {
+        if (element === media && media.paused) updateTransport();
+      });
+      element.addEventListener("play", () => {
+        if (element === media) startPlaybackLoop();
+      });
+      element.addEventListener("pause", () => {
+        if (element === media) stopPlaybackLoop();
+      });
+      element.addEventListener("error", () => {
+        if (element !== media) return;
+        const code = media.error?.code ? ` code ${media.error.code}` : "";
+        ui.status.textContent = `動画または音声を再生できません${code}`;
+      });
     });
     window.addEventListener("resize", () => requestDraw());
 
@@ -2819,7 +2870,7 @@
       isTimelinePanning = true;
       suppressTimelineClick = false;
       panStartX = event.clientX;
-      panStartCenter = followPlayhead ? (audio.currentTime || 0) : viewCenter;
+      panStartCenter = followPlayhead ? (media.currentTime || 0) : viewCenter;
       panStartWindowDuration = windowInfo.windowDuration;
       followPlayhead = false;
       ui.timelineWrap.classList.add("is-panning");
@@ -2942,12 +2993,14 @@
     });
 
     ui.app.addEventListener("drop", async (event) => {
-      const file = [...event.dataTransfer.files].find((item) => item.type.startsWith("audio/"));
+      const file = [...event.dataTransfer.files].find((item) =>
+        item.type.startsWith("audio/") || item.type.startsWith("video/")
+        || /\.(mp4|webm|mov|m4v|mp3|wav|m4a)$/i.test(item.name));
       if (!file) {
-        ui.status.textContent = "音声ファイルをドロップしてください";
+        ui.status.textContent = "動画または音声ファイルをドロップしてください";
         return;
       }
-      await loadAudioBlob(file, file.name);
+      await loadMediaBlob(file, file.name);
     });
 
     window.addEventListener("keydown", async (event) => {
@@ -3013,7 +3066,7 @@
     // （使い方モーダルは従来どおり ? キー / ヘルプボタンから開ける）。
     if (!restoredSession && !storageGet(HELP_SEEN_KEY)) startTour();
     window.setTimeout(() => {
-      if (!audio.src) ensureAudioLoaded();
+      if (!media.src) ensureAudioLoaded();
     }, 80);
   </script>
 </body>
